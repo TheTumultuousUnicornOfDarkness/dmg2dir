@@ -1,0 +1,11 @@
+- hfsplus module :
+  builtin since Linux 2.6.38 ?
+
+- dmg2img :
+  site : http://vu1tur.eu.org/tools/
+  direct download, latest version : http://vu1tur.eu.org/tools/dmg2img-1.6.4.tar.gz
+
+- disks2 :
+  site :http://www.freedesktop.org/wiki/Software/udisks/
+  download : http://udisks.freedesktop.org/releases/
+  direct download version 2.1.0 : udisks.freedesktop.org/releases/udisks-2.1.0.tar.bz2

@@ -1,0 +1,8 @@
+TODO LIST :
+
+- Add verbose mode
+- Improve tracing errors (there are command which always return 0...)
+- Add french language
+- Add more functions, make a cleaner script
+- Add support to execute binary files in APP.app/Contents/MacOS/, thanks Darling Project ?
+- Write a PKGBUILD for ArchLinux ! :D

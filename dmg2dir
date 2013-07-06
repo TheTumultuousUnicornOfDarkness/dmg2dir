@@ -1,0 +1,85 @@
+#!/bin/bash
+
+error() {
+	echo -e "\033[31mError $1.\033[0m" 
+	exit $1
+}
+
+if [[ $# == 0 || $1 == "-h" || $1 == "--help" ]]; then
+	echo -e "\ndmg2dir is a shell script which extract OS X application from .dmg file."
+	echo -e "\n\tUsage: dmg2dir <dmgfile> [DIRECTORY] [PATH]"
+	echo -e "\n  dmgfile		file which extension is .dmg (designed for OS X)"
+	echo "  DIRECTORY (optional)	directory name where application will be copied"
+	echo "  PATH (optional)	path where be located DIRECTORY"
+	echo -e "\nVersion 1.0.0."
+	exit 0
+elif [[ $1 == "-"* ]]; then
+	echo "dmg2img: invalid option $1"
+	echo "If you want help, try -h or --help"
+	exit 0
+fi  
+
+
+# Global variables
+mediadir=/run/media/$USER
+tmpdir=/tmp/dmg2dir
+mkdir -p $tmpdir || error 1
+
+
+if [[ $# == 1 ]]; then
+	filename=$(basename $1)
+	name=${filename%.*}
+else
+	name=$2
+fi
+
+# Convert .dmg to .img
+if [[ -e $tmpdir/$name.img ]]; then true
+else
+	dmg2img -s -i $1 -o $tmpdir/$name.img  || error 10
+fi
+
+# Mount .img file, determine what is loop file to mount
+loop=$(udisksctl loop-setup -f $tmpdir/$name.img || error 20)
+size=$(expr length "$loop" || error 30)
+cut_end=$((size-1))
+cut_start=$((cut_end-9))
+loop=$(echo $loop | cut -c$cut_start-$cut_end)
+
+loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
+	"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
+	| cut -c1-12  || error 40)
+
+label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33- || error 50)
+
+if [[ $# == 1 ]];then
+	name=$label
+fi
+
+udisksctl mount -b $loop_p &> /dev/null || error 60
+
+# Prepare copy and copy
+if [[ $# == 3 ]] 
+then
+  app_directory=$3/"$name"
+  mkdir -p "$app_directory" || error 70
+else
+  app_directory=$(dirname $1)/"$name"
+  mkdir -p "$app_directory" || error 75
+fi
+
+cp -aup $mediadir/"$label"*/* "$app_directory" || error 80
+
+# Umount
+udisksctl unmount -b $loop_p &> /dev/null || error 90
+udisksctl loop-delete -b $loop || error 100
+
+if [[ -s $app_directory ]]; then
+	echo -e "\n$label has been extracted in $app_directory."
+else
+	echo -e "$app_directory is empty !"
+	error 110
+fi
+
+
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 1.0.0. Copyleft 2013.
