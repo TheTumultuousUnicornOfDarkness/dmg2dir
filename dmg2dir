@@ -5,13 +5,22 @@ error() {
 	exit $1
 }
 
+finderror() {
+	if [[ $output == ERROR* ]]; then
+		error $1
+	elif [[ -z $2 ]]; then
+		error $1
+	fi
+}
+
+
 if [[ $# == 0 || $1 == "-h" || $1 == "--help" ]]; then
 	echo -e "\ndmg2dir is a shell script which extract OS X application from .dmg file."
 	echo -e "\n\tUsage: dmg2dir <dmgfile> [DIRECTORY] [PATH]"
 	echo -e "\n  dmgfile		file which extension is .dmg (designed for OS X)"
 	echo "  DIRECTORY (optional)	directory name where application will be copied"
 	echo "  PATH (optional)	path where be located DIRECTORY"
-	echo -e "\nVersion 1.0.0."
+	echo -e "\nVersion 1.1.0."
 	exit 0
 elif [[ $1 == "-"* ]]; then
 	echo "dmg2img: invalid option $1"
@@ -36,24 +45,27 @@ fi
 # Convert .dmg to .img
 if [[ -e $tmpdir/$name.img ]]; then true
 else
-	dmg2img -s -i $1 -o $tmpdir/$name.img  || error 10
+	output=$(dmg2img -s -i $1 -o $tmpdir/$name.img)
+	finderror 10 0
 fi
 
 # Mount .img file, determine what is loop file to mount
-loop=$(udisksctl loop-setup -f $tmpdir/$name.img || error 20)
-size=$(expr length "$loop" || error 30)
-cut_end=$((size-1))
-cut_start=$((cut_end-9))
+loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
+size=$(expr length "$loop") ; finderror 26 $size
+cut_end=$((size-1)) ; finderror 28 $cut_end
+cut_start=$((cut_end-9)) ; finderror 30 $cut_start
+
 loop=$(echo $loop | cut -c$cut_start-$cut_end)
 
 loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
 	"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
-	| cut -c1-12  || error 40)
+	| cut -c1-12) ; finderror 40 $loop_p
 
-label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33- || error 50)
+label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; finderror 50 $label
 
 if [[ $# == 1 ]];then
 	name=$label
+	finderror 55 $name
 fi
 
 udisksctl mount -b $loop_p &> /dev/null || error 60
@@ -82,4 +94,4 @@ else
 fi
 
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 1.0.0. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 1.1.0. Copyleft 2013.
