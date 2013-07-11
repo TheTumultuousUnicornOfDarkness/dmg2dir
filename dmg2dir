@@ -1,11 +1,52 @@
 #!/bin/bash
 
+args=$#
+mediadir="/run/media/$USER"
+tmpdir="/tmp/dmg2dir"
+force=false
+customname=false
+
+
+usage() {
+	echo "Usage:"
+	echo -e "  $0 [OPTIONS] <dmgfile>\t\t or"
+	echo -e "  $0 <dmgfile> [OPTIONS]\t\t or"
+	echo "  $0 [OPTIONS] <dmgfile> [OPTIONS]"
+	echo "...where <dmgfile> is a file which extension is .dmg (designed for OS X)"
+	echo -e "\nOptions:"
+	echo -e "-n, --name\t Custom name for application directory which will be created"
+	echo -e "-p, --path\t Custom path where application directory will be"
+	echo -e "-t, --tmp\t Custom temporary directory"
+	echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
+	echo -e "-f, --force\t Force 'dmg2img' to overwrite .img file if it exists"
+	echo -e "-v, --verbose\t Verbose output"
+	echo -e "-V, --version\t Display script version"
+	echo -e "-h, --help\t Display this message and exit"
+	echo -e "-a, --about\t Display various informations and exit"
+}
+
+about() {
+	echo -e "$0 is a shell script which extract OS X application from .dmg file.\n"
+	echo "Script's variables are:"
+	echo "  args: number of arguments used in input: $args"
+	echo "  mediadir: directory where media are automatically mounted: $mediadir"
+	echo "  tmpdir: temporary directory: $tmpdir"
+	echo "  force: value is true when -f or --force is used: $force"
+	echo "  customname: value is true when -n or --name is used: $customname"
+}
+
+version() {
+	echo -e "\n$0. Version 2.0.0. Written by X0rg.\n"
+}
+
+
+
 error() {
 	echo -e "\033[31mError $1.\033[0m" 
 	exit $1
 }
 
-finderror() {
+trackerror() {
 	if [[ $output == ERROR* ]]; then
 		error $1
 	elif [[ -z $2 ]]; then
@@ -13,78 +54,91 @@ finderror() {
 	fi
 }
 
+convertdmg() {
+	if [ ! -e $tmpdir/$name.img ] || $force ; then
+		output=$(dmg2img -s $v -i $filetoconvert -o $tmpdir/$name.img)
+		trackerror 10 0
+	fi
+}
 
-if [[ $# == 0 || $1 == "-h" || $1 == "--help" ]]; then
-	echo -e "\ndmg2dir is a shell script which extract OS X application from .dmg file."
-	echo -e "\n\tUsage: dmg2dir <dmgfile> [DIRECTORY] [PATH]"
-	echo -e "\n  dmgfile		file which extension is .dmg (designed for OS X)"
-	echo "  DIRECTORY (optional)	directory name where application will be copied"
-	echo "  PATH (optional)	path where be located DIRECTORY"
-	echo -e "\nVersion 1.1.0."
-	exit 0
-elif [[ $1 == "-"* ]]; then
-	echo "dmg2img: invalid option $1"
-	echo "If you want help, try -h or --help"
-	exit 0
-fi  
+premount() {
+	loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
+	size=$(expr length "$loop") ; trackerror 26 $size
+	cut_end=$((size-1)) ; trackerror 28 $cut_end
+	cut_start=$((cut_end-9)) ; trackerror 30 $cut_start
+
+	loop=$(echo $loop | cut -c$cut_start-$cut_end)
+
+	loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
+		"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
+		| cut -c1-12) ; trackerror 40 $loop_p
+
+	label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; trackerror 50 $label
+	
+	if ! $customname; then
+		name=$label
+		trackerror 55 $name
+	fi
+	
+	app_directory=$(dirname "$filetoconvert")/"$name"
+}
+
+mountimg() {
+	udisksctl mount -b $loop_p &> /dev/null || error 60
+}
+
+copy() {
+	if [[ ! -z $savepath ]]; then
+	  app_directory="$savepath/$name"
+	fi
+
+	mkdir -p $v "$app_directory" || error 75
+	cp -aup $v "$mediadir/$label"*/* "$app_directory" || error 80
+}
+
+umountimg() {
+	udisksctl unmount -b $loop_p &> /dev/null || error 90
+	udisksctl loop-delete -b $loop || error 100
+}
 
 
-# Global variables
-mediadir=/run/media/$USER
-tmpdir=/tmp/dmg2dir
-mkdir -p $tmpdir || error 1
+while test $# -gt 0
+do
+	option=$1
+
+	case "$option" in
+		-n|--name)	name="$2";customname=true; shift;;
+		-p|--path)	savepath="$2"; shift;;
+		-t|--tmp)	tmpdir="$2"; shift;;
+		-m|--media)	mediadir="$2"; shift;;
+		-f|--force)	force=true;;
+		-v|--verbose)	v="-v";;
+		-V|--version)	version; exit 0;;
+		-h|--help)	usage; exit 0;;
+		-a|--about)	about; exit 0;;
+		- |--)		usage; exit 1;;
+		*)		filetoconvert=$1;;
+	esac
+	shift
+done
 
 
-if [[ $# == 1 ]]; then
-	filename=$(basename $1)
-	name=${filename%.*}
-else
-	name=$2
+if [[ $args == 0 && -z $name ]]; then
+	usage
+	exit 2
 fi
 
-# Convert .dmg to .img
-if [[ -e $tmpdir/$name.img ]]; then true
-else
-	output=$(dmg2img -s -i $1 -o $tmpdir/$name.img)
-	finderror 10 0
+
+if [ -z $name ]; then
+	name=$(basename "$filetoconvert" .dmg)
 fi
 
-# Mount .img file, determine what is loop file to mount
-loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
-size=$(expr length "$loop") ; finderror 26 $size
-cut_end=$((size-1)) ; finderror 28 $cut_end
-cut_start=$((cut_end-9)) ; finderror 30 $cut_start
-
-loop=$(echo $loop | cut -c$cut_start-$cut_end)
-
-loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
-	"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
-	| cut -c1-12) ; finderror 40 $loop_p
-
-label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; finderror 50 $label
-
-if [[ $# == 1 ]];then
-	name=$label
-	finderror 55 $name
-fi
-
-udisksctl mount -b $loop_p &> /dev/null || error 60
-
-# Prepare copy and copy
-if [[ $# == 3 ]] 
-then
-  app_directory=$3/"$name"
-  mkdir -p "$app_directory" || error 70
-else
-  app_directory=$(dirname $1)/"$name"
-  mkdir -p "$app_directory" || error 75
-fi
-
-cp -aup $mediadir/"$label"*/* "$app_directory" || error 80
-
-# Umount
-udisksctl unmount -b $loop_p &> /dev/null || error 90
-udisksctl loop-delete -b $loop || error 100
+mkdir -p $v $tmpdir
+convertdmg
+premount
+mountimg
+copy
+umountimg
 
 if [[ -s $app_directory ]]; then
 	echo -e "\n$label has been extracted in $app_directory."
@@ -93,5 +147,6 @@ else
 	error 110
 fi
 
+exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 1.1.0. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.0.0. Copyleft 2013.
