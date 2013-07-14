@@ -1,6 +1,5 @@
 TODO LIST :
 
-- Improve verbose mode
 - Improve *again* tracing errors
 - Add french language
 - Add support to execute binary files in APP.app/Contents/MacOS/, thanks Darling Project ?
@@ -41,3 +40,4 @@ OLD TASKS :
 
 - Write a PKGBUILD for ArchLinux
 - Add more functions, make a cleaner script
+- Improve verbose mode
