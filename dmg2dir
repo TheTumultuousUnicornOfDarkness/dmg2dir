@@ -12,46 +12,86 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
+version="2.2.0"
 
 
 usage() {
-	echo "Usage:"
-	echo -e "  $0 [OPTIONS] <dmgfile>\t\t or"
-	echo -e "  $0 <dmgfile> [OPTIONS]\t\t or"
-	echo "  $0 [OPTIONS] <dmgfile> [OPTIONS]"
-	echo "...where <dmgfile> is a file which extension is .dmg (designed for OS X)"
-	echo -e "\nOptions:"
-	echo -e "-n, --name\t Custom name for application directory which will be created"
-	echo -e "-p, --path\t Custom path where application directory will be"
-	echo -e "-t, --tmp\t Custom temporary directory"
-	echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
-	echo -e "-f, --force\t Force 'dmg2img' to overwrite .img file if it exists"
-	echo -e "-v, --verbose\t Verbose output"
-	echo -e "-vv, --vverbose\t Very verbose output"
-	echo -e "-V, --version\t Display script version"
-	echo -e "-h, --help\t Display this message and exit"
-	echo -e "-a, --about\t Display various informations and exit"
+	if [[ $(locale -a | grep french) == "french" ]]; then
+		echo "Usage :"
+		echo -e "  $0 [OPTIONS] <fichierdmg>\t\t ou"
+		echo -e "  $0 <fichierdmg> [OPTIONS]\t\t ou"
+		echo "  $0 [OPTIONS] <fichierdmg> [OPTIONS]"
+		echo "...où <fichierdmg> est un fichier dont l'extension est .dmg (conçu pour OS X)"
+		echo -e "\nOptions :"
+		echo -e "-n, --name\t Nom personnalisé du répertoire de l'application qui sera créé"
+		echo -e "-p, --path\t Chemin personnalisé où le répertoire de l'application sera"
+		echo -e "-t, --tmp\t Répertoire temporaire personnalisé"
+		echo -e "-m, --media\t Répertoire où les médias sont montés automatiquement. Il n'est pas nécessaire de la changer"
+		echo -e "-f, --force\t Force '$0' à écraser le fichier .img s'il existe"
+		echo -e "-v, --verbose\t Sortie bavarde"
+		echo -e "-vv, --vverbose\t Sortie très bavarde"
+		echo -e "-V, --version\t Affiche la version du script et quitte"
+		echo -e "-h, --help\t Affiche ce message et quitte"
+		echo -e "-a, --about\t Affiche des informations diverses et quitte"
+	else
+		echo "Usage:"
+		echo -e "  $0 [OPTIONS] <dmgfile>\t\t or"
+		echo -e "  $0 <dmgfile> [OPTIONS]\t\t or"
+		echo "  $0 [OPTIONS] <dmgfile> [OPTIONS]"
+		echo "...where <dmgfile> is a file which extension is .dmg (designed for OS X)"
+		echo -e "\nOptions:"
+		echo -e "-n, --name\t Custom name for application directory which will be created"
+		echo -e "-p, --path\t Custom path where application directory will be"
+		echo -e "-t, --tmp\t Custom temporary directory"
+		echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
+		echo -e "-f, --force\t Force '$0' to overwrite .img file if it exists"
+		echo -e "-v, --verbose\t Verbose output"
+		echo -e "-vv, --vverbose\t Very verbose output"
+		echo -e "-V, --version\t Display script version and exit"
+		echo -e "-h, --help\t Display this message and exit"
+		echo -e "-a, --about\t Display various informations and exit"
+	fi
 }
 
 about() {
-	echo -e "$0 is a shell script which extract OS X application from .dmg file.\n"
-	echo "Script's variables are:"
-	echo "  args: number of arguments used in input: $args"
-	echo "  mediadir: directory where media are automatically mounted: $mediadir"
-	echo "  tmpdir: temporary directory: $tmpdir"
-	echo "  force: value is true when -f or --force is used: $force"
-	echo "  customname: value is true when -n or --name is used: $customname"
-	echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
+	if [[ $(locale -a | grep french) == "french" ]]; then
+		echo -e "$0 est un script shell qui extrait les applications OS X depuis un fichier .dmg.\n"
+		echo "Les variables du script sont :"
+		echo "  args : nombre d'arguments utilisés en entrée : $args"
+		echo "  mediadir : le répertoire où les médias sont montés automatiquement : $mediadir"
+		echo "  tmpdir : le répertoire temporaire : $tmpdir"
+		echo "  force : sa valeur est true quand -f ou --force est utilisé : $force"
+		echo "  customname : sa valeur est true quand -n ou --name est utilisé : $customname"
+		echo -e "\nPour utiliser le mode de débuguage, utilisez la commande : 'DEBUG=1 $0'"
+	else
+		echo -e "$0 is a shell script which extract OS X application from .dmg file.\n"
+		echo "Script's variables are:"
+		echo "  args: number of arguments used in input: $args"
+		echo "  mediadir: directory where media are automatically mounted: $mediadir"
+		echo "  tmpdir: temporary directory: $tmpdir"
+		echo "  force: value is true when -f or --force is used: $force"
+		echo "  customname: value is true when -n or --name is used: $customname"
+		echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
+	fi
 }
 
 version() {
-	echo -e "\n$0. Version 2.1.0. Written by X0rg.\n"
+	if [[ $(locale -a | grep french) == "french" ]]; then
+		echo -e "\n$0. Version $version. Écrit par X0rg.\n"
+	else
+		echo -e "\n$0. Version $version. Written by X0rg.\n"
+	fi
 }
 
 
 
 error() {
-	echo -e "\033[31mError $1.\033[0m" 
+	if [[ $(locale -a | grep french) == "french" ]]; then
+	echo -e "\033[31mErreur $1.\033[0m"
+	else
+	echo -e "\033[31mError $1.\033[0m"
+	fi
+
 	exit $1
 }
 
@@ -129,33 +169,67 @@ umountimg() {
 
 verbose() {
 	if [ ! -z $v ]; then
-		msg0="\n$color1 Make temporary working directory...$endcolor"
-		msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
-		msg200="\n$color1 Prepare loop device...$endcolor"
-		msg300="\n$color1 Mount loop device...$endcolor"
-		msg400="\n$color1 Copy files...$endcolor"
-		msg500="\n$color1 Umount loop device...$endcolor"
-		msg600="\n$color3$label has been extracted in $app_directory.$endcolor"
-		msg610="\n$color4$app_directory is empty!$endcolor"
+
+		if [[ $(locale -a | grep french) == "french" ]]; then
+			msg0="\n$color1 Créé le dossier temporaire de travail...$endcolor"
+			msg100="\n$color1 Convertit le fichier DMG en un fichier IMG ...$endcolor"
+			msg200="\n$color1 Prépare le périphérique loop...$endcolor" 
+			msg300="\n$color1 Monte le périphérique loop...$endcolor"
+			msg400="\n$color1 Copie les fichiers...$endcolor"
+			msg500="\n$color1 Démonte le périphérique loop...$endcolor"
+			msg600="\n$color3$label a été extrait dans $app_directory.$endcolor"
+			msg610="\n$color4$app_directory est vide !$endcolor"
+		else
+			msg0="\n$color1 Make temporary working directory...$endcolor"
+			msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
+			msg200="\n$color1 Prepare loop device...$endcolor"
+			msg300="\n$color1 Mount loop device...$endcolor"
+			msg400="\n$color1 Copy files...$endcolor"
+			msg500="\n$color1 Umount loop device...$endcolor"
+			msg600="\n$color3$label has been extracted in $app_directory.$endcolor"
+			msg610="\n$color4$app_directory is empty!$endcolor"
+		fi
+
 	fi
 
 	if [[ ! -z $vv ]]; then
-		msg110="$color2 Convert $filetoconvert to $tmpdir/$name.img"
-		msg210="$color2 Set-up loop device from file $tmpdir/$name.img"
-		msg215="$color2 Determine length of variable \$loop"
-		msg220="$color2 Determine end where we will cut in \$cut_end"
-		msg225="$color2 Determine start where we will cut in \$cut_start"
-		msg230="$color2 Cut variable \$loop to contain loop device"
-		msg240="$color2 Find what is the best loop partition"
-		msg250="$color2 Find partition label"
-		msg260="$color2 No custom name set. Will use \$label $label at \$name"
-		msg310="$color2 Mount $loop_p'"
-		msg410="$color2 Option --path is used. Set variable \$app_directory as : $savepath/$name"
-		msg415="$color2 Set variable \$app_directory"
-		msg420="$color2 Make directory $app_directory"
-		msg430="$color2 Copy files from $mediadir/$label into $app_directory"
-		msg510="$color2 Unmount $loop_p"
-		msg520="$color2 Delete loop device $loop"
+
+		if [[ $(locale -a | grep french) == "french" ]]; then
+			msg110="$color2 Convertit $filetoconvert en $tmpdir/$name.img"
+			msg210="$color2 Configure le périphérique loop depuis le fichier $tmpdir/$name.img"
+			msg215="$color2 Détermine la taille de la variable \$loop"
+			msg220="$color2 Détermine la fin où on coupera dans \$cut_end"
+			msg225="$color2 Détermine le début où on coupera dans \$cut_start"
+			msg230="$color2 Découpe la variable \$loop pour qu'elle contienne le périphérique loop"
+			msg240="$color2 Cherche quelle est la meilleur partition loop"
+			msg250="$color2 Cherche le nom de la partition"
+			msg260="$color2 Pas de nom personnalisé définit. Utilisera \$label $label comme \$name"
+			msg310="$color2 Monte $loop_p'"
+			msg410="$color2 L'option --path est utilisée. Configure la variable \$app_directory comme : $savepath/$name"
+			msg415="$color2 Configure la variable \$app_directory"
+			msg420="$color2 Créé le répertoire $app_directory"
+			msg430="$color2 Copie les fichiers de $mediadir/$label dans $app_directory"
+			msg510="$color2 Démonte $loop_p"
+			msg520="$color2 Supprime le périphérique loop $loop"
+		else
+			msg110="$color2 Convert $filetoconvert to $tmpdir/$name.img"
+			msg210="$color2 Set-up loop device from file $tmpdir/$name.img"
+			msg215="$color2 Determine length of variable \$loop"
+			msg220="$color2 Determine end where we will cut in \$cut_end"
+			msg225="$color2 Determine start where we will cut in \$cut_start"
+			msg230="$color2 Cut variable \$loop to contain loop device"
+			msg240="$color2 Find what is the best loop partition"
+			msg250="$color2 Find partition label"
+			msg260="$color2 No custom name set. Will use \$label $label at \$name"
+			msg310="$color2 Mount $loop_p'"
+			msg410="$color2 Option --path is used. Set variable \$app_directory as : $savepath/$name"
+			msg415="$color2 Set variable \$app_directory"
+			msg420="$color2 Make directory $app_directory"
+			msg430="$color2 Copy files from $mediadir/$label into $app_directory"
+			msg510="$color2 Unmount $loop_p"
+			msg520="$color2 Delete loop device $loop"
+		fi
+
 	fi
 
 	eval msg='$'$1
@@ -213,4 +287,4 @@ if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.1.0. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.0. Copyleft 2013.
