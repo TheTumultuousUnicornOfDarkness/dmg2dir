@@ -12,7 +12,7 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
-version="2.2.0"
+version="2.2.1"
 
 
 usage() {
@@ -96,7 +96,7 @@ error() {
 }
 
 trackerror() {
-	if [[ $output == ERROR* ]]; then
+	if [[ $output == *ERROR* ]]; then
 		error $1
 	elif [[ -z $2 ]]; then
 		error $1
@@ -287,4 +287,4 @@ if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.0. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.1. Copyleft 2013.
