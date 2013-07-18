@@ -12,7 +12,7 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
-version="2.2.1"
+version="2.2.2"
 
 
 usage() {
@@ -92,15 +92,21 @@ error() {
 	echo -e "\033[31mError $1.\033[0m"
 	fi
 
+	umountimg
 	exit $1
 }
 
 trackerror() {
-	if [[ $output == *ERROR* ]]; then
-		error $1
-	elif [[ -z $2 ]]; then
-		error $1
-	fi
+	# Usage : trackerror $1=QUOI_CHERCHER $2=CODE_ERREUR_(SI_ERREUR) $3=QUOI_TESTER [$4=PAR_RAPPORT_À]
+
+	case $1 in
+	0100)		if [[ $3 == *ERROR* ]]; then error $2; fi;;
+	0200)		if [[ $3 -le $4 ]]; then error $2; fi;;
+	0300)		if [[ ! $3 == $4 ]]; then error $2; fi;;
+	0400)		if [[ -z $3 ]]; then error $2; fi;;
+	0500)		if [[ ! -d $3 ]]; then error $2; fi;;
+	0600)		if [[ ! -s $3 ]]; then verbose msg610; error $2; fi;;
+	esac
 }
 
 convertdmg() {
@@ -109,10 +115,10 @@ convertdmg() {
 		if [ ! -z "$v" ]; then
 			verbose msg110 ; output=$(dmg2img $v -i $filetoconvert -o $tmpdir/$name.img)
 			echo $output
-			trackerror 10 0
+			trackerror 0100 10 $output
 		else
 			output=$(dmg2img -s -i $filetoconvert -o $tmpdir/$name.img)
-			trackerror 11 0
+			trackerror 0100 11 $output
 		fi
 
 	fi
@@ -120,21 +126,21 @@ convertdmg() {
 
 premount() {
 	verbose msg210 ; loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
-	verbose msg215 ; size=$(expr length "$loop") ; trackerror 26 $size
-	verbose msg220 ; cut_end=$((size-1)) ; trackerror 28 $cut_end
-	verbose msg225 ; cut_start=$((cut_end-9)) ; trackerror 30 $cut_start
+	verbose msg215 ; size=$(expr length "$loop") ; trackerror 0200 26 $size 32
+	verbose msg220 ; cut_end=$((size-1)) ; trackerror 0200 28 $cut_end 31
+	verbose msg225 ; cut_start=$((cut_end-9)) ; trackerror 0200 30 $cut_end 21
 
-	verbose msg230 ; loop=$(echo $loop | cut -c$cut_start-$cut_end)
+	verbose msg230 ; loop=$(echo $loop | cut -c$cut_start-$cut_end) ; trackerror 0300 35 $(expr length $loop) 10
 
 	verbose msg240 ; loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
 		"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
-		| cut -c1-12) ; trackerror 40 $loop_p
+		| cut -c1-12) ; trackerror 0300 40 $(expr length $loop_p) 12
 
-	verbose msg250 ; label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; trackerror 50 $label
+	verbose msg250 ; label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; trackerror 0400 50 $label
 	
 	if ! $customname; then
 		verbose msg260 ; name=$label
-		trackerror 55 $name
+		trackerror 0400 55 $name
 	fi
 }
 
@@ -148,13 +154,14 @@ mountimg() {
 
 copy() {
 	if [[ ! -z $savepath ]]; then
-		verbose msg410 ; app_directory="$savepath/$name"
+		verbose msg410 ; app_directory="$savepath/$name" ; trackerror 0400 70 "$app_directory"
 	else
-		verbose msg415 ; app_directory=$(dirname "$filetoconvert")/"$name"
+		verbose msg415 ; app_directory=$(dirname "$filetoconvert")/"$name" ; trackerror 0400 71 "$app_directory"
 	fi
 
-	verbose msg420 ; mkdir -p $v "$app_directory" || error 75
+	verbose msg420 ; mkdir -p $v "$app_directory" || error 75 ; trackerror 0500 76 "$app_directory"
 	verbose msg430 ; cp -aup $v "$mediadir/$label"*/* "$app_directory" || error 80
+	trackerror 0600 85 "$app_directory"/*
 }
 
 umountimg() {
@@ -275,16 +282,10 @@ verbose msg200 ; premount
 verbose msg300 ; mountimg
 verbose msg400 ; copy
 verbose msg500 ; umountimg
-
-if [[ -s $app_directory ]]; then
-	verbose msg600
-else
-	verbose msg610
-	error 110
-fi
+verbose msg600
 
 if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.1. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.2. Copyleft 2013.
