@@ -105,7 +105,7 @@ trackerror() {
 	0300)		if [[ ! $3 == $4 ]]; then error $2; fi;;
 	0400)		if [[ -z $3 ]]; then error $2; fi;;
 	0500)		if [[ ! -d $3 ]]; then error $2; fi;;
-	0600)		if [[ ! -s $3 ]]; then verbose msg610; error $2; fi;;
+	0600)		if [[ -z $(ls -Ad $3) ]]; then verbose msg610; error $2; fi;;
 	esac
 }
 
