@@ -13,7 +13,7 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
-version="2.2.2"
+version="2.2.3"
 
 
 usage() {
@@ -309,4 +309,4 @@ if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.2. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.3. Copyleft 2013.
