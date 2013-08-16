@@ -124,6 +124,14 @@ convertdmg() {
 	fi
 }
 
+initialize() {
+	if [[ ! $(lsmod | grep loop) == loop* ]]; then
+		verbose msg190
+		udisksctl loop-setup -f $tmpdir/$name.img &> /dev/null || verbose msg195; error 15
+		udisksctl loop-delete -b /dev/loop{0,1,2,3,4,5,6,7} &> /dev/null
+	fi
+}
+
 premount() {
 	verbose msg210 ; loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
 	verbose msg215 ; size=$(expr length "$loop") ; trackerror 0200 26 $size 32
@@ -180,6 +188,8 @@ verbose() {
 		if [[ $(locale -a | grep french) == "french" ]]; then
 			msg0="\n$color1 Créé le dossier temporaire de travail...$endcolor"
 			msg100="\n$color1 Convertit le fichier DMG en un fichier IMG ...$endcolor"
+			msg190="\n$color1 Initialise le périphérique loop$endcolor"
+			msg195="\n$color4 Impossible d'initialiser le périphérique loop. Merci de charger le module 'loop'.$endcolor"
 			msg200="\n$color1 Prépare le périphérique loop...$endcolor" 
 			msg300="\n$color1 Monte le périphérique loop...$endcolor"
 			msg400="\n$color1 Copie les fichiers...$endcolor"
@@ -189,6 +199,8 @@ verbose() {
 		else
 			msg0="\n$color1 Make temporary working directory...$endcolor"
 			msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
+			msg190="\n$color1 Initialize loop device$endcolor"
+			msg195="\n$color4 Can't initialize loop device. Please load 'loop' module.$endcolor"
 			msg200="\n$color1 Prepare loop device...$endcolor"
 			msg300="\n$color1 Mount loop device...$endcolor"
 			msg400="\n$color1 Copy files...$endcolor"
@@ -278,6 +290,7 @@ fi
 
 verbose msg0   ; mkdir -p $v $tmpdir
 verbose msg100 ; convertdmg
+initialize
 verbose msg200 ; premount
 verbose msg300 ; mountimg
 verbose msg400 ; copy
