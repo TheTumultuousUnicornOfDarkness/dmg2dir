@@ -7,6 +7,7 @@ mediadir="/run/media/$USER"
 tmpdir="/tmp/dmg2dir"
 force=false
 customname=false
+err=false
 color1="\033[32m==>\033[0;1m"
 color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
@@ -62,6 +63,7 @@ about() {
 		echo "  tmpdir : le répertoire temporaire : $tmpdir"
 		echo "  force : sa valeur est true quand -f ou --force est utilisé : $force"
 		echo "  customname : sa valeur est true quand -n ou --name est utilisé : $customname"
+		echo "  err : empêche les boucles infinies en cas d'erreur : $err"
 		echo -e "\nPour utiliser le mode de débuguage, utilisez la commande : 'DEBUG=1 $0'"
 	else
 		echo -e "$0 is a shell script which extract OS X application from .dmg file.\n"
@@ -71,6 +73,7 @@ about() {
 		echo "  tmpdir: temporary directory: $tmpdir"
 		echo "  force: value is true when -f or --force is used: $force"
 		echo "  customname: value is true when -n or --name is used: $customname"
+		echo "  err : stop infinite loop if an error occurring : $err"
 		echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
 	fi
 }
@@ -92,8 +95,12 @@ error() {
 	echo -e "\033[31mError $1.\033[0m"
 	fi
 
-	umountimg
-	exit $1
+	if $err; then
+		exit -1
+	else
+		umountimg
+		exit $1
+	fi
 }
 
 trackerror() {
@@ -173,6 +180,7 @@ copy() {
 }
 
 umountimg() {
+	err=true
 	if [ ! -z "$v" ]; then
 		verbose msg510 ; udisksctl unmount -b $loop_p || error 90
 	else
