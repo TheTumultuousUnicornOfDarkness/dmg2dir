@@ -134,8 +134,13 @@ convertdmg() {
 initialize() {
 	if [[ ! $(lsmod | grep loop) == loop* ]]; then
 		verbose msg190
-		udisksctl loop-setup -f $tmpdir/$name.img &> /dev/null || verbose msg195; error 15
+		udisksctl loop-setup -f $tmpdir/$name.img &> /dev/null
 		udisksctl loop-delete -b /dev/loop{0,1,2,3,4,5,6,7} &> /dev/null
+		ls /dev/loop{0,1,2,3,4,5,6,7} &> /dev/null
+		if [[ ! $? == 0 ]]; then
+			verbose msg195; error 15
+		fi
+
 	fi
 }
 
