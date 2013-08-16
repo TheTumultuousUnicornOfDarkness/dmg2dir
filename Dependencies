@@ -9,3 +9,5 @@
   site :http://www.freedesktop.org/wiki/Software/udisks/
   download : http://udisks.freedesktop.org/releases/
   direct download version 2.1.0 : udisks.freedesktop.org/releases/udisks-2.1.0.tar.bz2
+
+- You need to be in the 'disk' group.

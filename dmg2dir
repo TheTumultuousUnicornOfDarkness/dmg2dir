@@ -142,6 +142,11 @@ initialize() {
 		fi
 
 	fi
+
+	if [[ ! $(grep disk /etc/group | grep $USER) == *$USER* ]]; then
+		verbose msg198; error 18
+	fi
+
 }
 
 premount() {
@@ -203,7 +208,8 @@ verbose() {
 			msg100="\n$color1 Convertit le fichier DMG en un fichier IMG ...$endcolor"
 			msg190="\n$color1 Initialise le périphérique loop$endcolor"
 			msg195="\n$color4 Impossible d'initialiser le périphérique loop. Merci de charger le module 'loop'.$endcolor"
-			msg200="\n$color1 Prépare le périphérique loop...$endcolor" 
+			msg198="\n$color4 Vous devez être dans le groupe 'disk'.$endcolor"
+			msg200="\n$color1 Prépare le périphérique loop...$endcolor"
 			msg300="\n$color1 Monte le périphérique loop...$endcolor"
 			msg400="\n$color1 Copie les fichiers...$endcolor"
 			msg500="\n$color1 Démonte le périphérique loop...$endcolor"
@@ -214,6 +220,7 @@ verbose() {
 			msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
 			msg190="\n$color1 Initialize loop device$endcolor"
 			msg195="\n$color4 Can't initialize loop device. Please load 'loop' module.$endcolor"
+			msg198="\n$color4 You need to be in the 'disk' group.$endcolor"
 			msg200="\n$color1 Prepare loop device...$endcolor"
 			msg300="\n$color1 Mount loop device...$endcolor"
 			msg400="\n$color1 Copy files...$endcolor"
