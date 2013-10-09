@@ -6,6 +6,7 @@ args=$#
 mediadir="/run/media/$USER"
 tmpdir="/tmp/dmg2dir"
 force=false
+run=false
 customname=false
 err=false
 color1="\033[32m==>\033[0;1m"
@@ -13,7 +14,7 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
-version="2.2.3"
+version="2.3.0"
 
 
 usage() {
@@ -28,6 +29,7 @@ usage() {
 		echo -e "-p, --path\t Chemin personnalisé où le répertoire de l'application sera"
 		echo -e "-t, --tmp\t Répertoire temporaire personnalisé"
 		echo -e "-m, --media\t Répertoire où les médias sont montés automatiquement. Il n'est pas nécessaire de la changer"
+		echo -e "-r, --run\t Exécute le fichier binaire contenu dans le fichier .dmg (expérimental)"
 		echo -e "-f, --force\t Force '$0' à écraser le fichier .img s'il existe"
 		echo -e "-v, --verbose\t Sortie bavarde"
 		echo -e "-vv, --vverbose\t Sortie très bavarde"
@@ -45,6 +47,7 @@ usage() {
 		echo -e "-p, --path\t Custom path where application directory will be"
 		echo -e "-t, --tmp\t Custom temporary directory"
 		echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
+		echo -e "-r, --run\t Run binary file contained in .dmg file (experimental)"
 		echo -e "-f, --force\t Force '$0' to overwrite .img file if it exists"
 		echo -e "-v, --verbose\t Verbose output"
 		echo -e "-vv, --vverbose\t Very verbose output"
@@ -62,6 +65,7 @@ about() {
 		echo "  mediadir : le répertoire où les médias sont montés automatiquement : $mediadir"
 		echo "  tmpdir : le répertoire temporaire : $tmpdir"
 		echo "  force : sa valeur est true quand -f ou --force est utilisé : $force"
+		echo "  run : sa valeur est true quand -r ou --run est utilisé : $run"
 		echo "  customname : sa valeur est true quand -n ou --name est utilisé : $customname"
 		echo "  err : empêche les boucles infinies en cas d'erreur : $err"
 		echo -e "\nPour utiliser le mode de débuguage, utilisez la commande : 'DEBUG=1 $0'"
@@ -72,6 +76,7 @@ about() {
 		echo "  mediadir: directory where media are automatically mounted: $mediadir"
 		echo "  tmpdir: temporary directory: $tmpdir"
 		echo "  force: value is true when -f or --force is used: $force"
+		echo "  run: value is true when -r or --run is used: $run"
 		echo "  customname: value is true when -n or --name is used: $customname"
 		echo "  err : stop infinite loop if an error occurring : $err"
 		echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
@@ -200,6 +205,13 @@ umountimg() {
 	verbose msg520 ; udisksctl loop-delete -b $loop || error 100
 }
 
+launcher() {
+	if $run; then
+		binary=$(file `find $app_directory/*.app/Contents/MacOS/` | grep Mach-O | grep -v lib | cut -d ":" -f1)
+		verbose msg700 ; dyld $binary
+	fi
+}
+
 verbose() {
 	if [ ! -z $v ]; then
 
@@ -215,6 +227,7 @@ verbose() {
 			msg500="\n$color1 Démonte le périphérique loop...$endcolor"
 			msg600="\n$color3$label a été extrait dans $app_directory.$endcolor"
 			msg610="\n$color4$app_directory est vide !$endcolor"
+			msg700="\n$color1 Essaye d'exécuter le fichier binaire...$endcolor"
 		else
 			msg0="\n$color1 Make temporary working directory...$endcolor"
 			msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
@@ -227,6 +240,7 @@ verbose() {
 			msg500="\n$color1 Umount loop device...$endcolor"
 			msg600="\n$color3$label has been extracted in $app_directory.$endcolor"
 			msg610="\n$color4$app_directory is empty!$endcolor"
+			msg700="\n$color1 Try to run binary file...$endcolor"
 		fi
 
 	fi
@@ -286,6 +300,7 @@ do
 		-t|--tmp)	tmpdir="$2"; shift;;
 		-m|--media)	mediadir="$2"; shift;;
 		-f|--force)	force=true;;
+		-r|--run)	run=true;;
 		-v|--verbose)	v="-v";;
 	       -vv|--vverbose)	v="-v"; vv="veeeeery veeeeerbose";;
 		-V|--version)	version; exit 0;;
@@ -316,9 +331,10 @@ verbose msg300 ; mountimg
 verbose msg400 ; copy
 verbose msg500 ; umountimg
 verbose msg600
+launcher
 
 if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.2.3. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.3.0. Copyleft 2013.

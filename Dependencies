@@ -5,9 +5,14 @@
   site : http://vu1tur.eu.org/tools/
   direct download, latest version : http://vu1tur.eu.org/tools/dmg2img-1.6.4.tar.gz
 
-- disks2 :
-  site :http://www.freedesktop.org/wiki/Software/udisks/
+- udisks2 :
+  site : http://www.freedesktop.org/wiki/Software/udisks/
   download : http://udisks.freedesktop.org/releases/
-  direct download version 2.1.0 : udisks.freedesktop.org/releases/udisks-2.1.0.tar.bz2
+  direct download version 2.1.1 : http://udisks.freedesktop.org/releases/udisks-2.1.1.tar.bz2
 
 - You need to be in the 'disk' group.
+
+- Darling (optional : only needed to use --run)
+  site : http://darling.dolezel.info/en/Darling
+  download (command) : git clone --recursive git://github.com/LubosD/darling.git
+  build : see http://darling.dolezel.info/en/Build
