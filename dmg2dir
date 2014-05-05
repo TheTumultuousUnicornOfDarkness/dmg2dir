@@ -148,7 +148,7 @@ initialize() {
 
 	fi
 
-	$(groups | grep -q disk) || verbose msg198; error 18
+	$(groups | grep -q disk) || (verbose msg198; error 18)
 }
 
 premount() {
@@ -204,8 +204,10 @@ umountimg() {
 
 launcher() {
 	if $run; then
-		binary=$(file `find $app_directory/*.app/Contents/MacOS/` | grep Mach-O | grep -v lib | cut -d ":" -f1)
-		verbose msg700 ; dyld $binary
+		find "$app_directory"/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r possibleexecutable; do
+			verbose msg700
+			dyld "$possibleexecutable"
+		done
 	fi
 }
 
