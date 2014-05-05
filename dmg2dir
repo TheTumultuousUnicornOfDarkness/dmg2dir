@@ -148,10 +148,7 @@ initialize() {
 
 	fi
 
-	if [[ ! $(grep disk /etc/group | grep $USER) == *$USER* ]]; then
-		verbose msg198; error 18
-	fi
-
+	$(groups | grep -q disk) || verbose msg198; error 18
 }
 
 premount() {
