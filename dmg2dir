@@ -7,6 +7,7 @@ mediadir="/run/media/$USER"
 tmpdir="/tmp/dmg2dir"
 force=false
 run=false
+iso=false
 customname=false
 err=false
 color1="\033[32m==>\033[0;1m"
@@ -14,7 +15,7 @@ color2="\033[34m  ->\033[0m"
 color3="\033[1;42m"
 color4="\033[1;41m"
 endcolor="\033[0m"
-version="2.3.0"
+version="2.4.0"
 
 
 usage() {
@@ -30,6 +31,7 @@ usage() {
 		echo -e "-t, --tmp\t Répertoire temporaire personnalisé"
 		echo -e "-m, --media\t Répertoire où les médias sont montés automatiquement. Il n'est pas nécessaire de la changer"
 		echo -e "-r, --run\t Exécute le fichier binaire contenu dans le fichier .dmg (expérimental)"
+		echo -e "-i, --iso\t Créé un fichier ISO à partir du répertoire"
 		echo -e "-f, --force\t Force '$0' à écraser le fichier .img s'il existe"
 		echo -e "-v, --verbose\t Sortie bavarde"
 		echo -e "-vv, --vverbose\t Sortie très bavarde"
@@ -48,6 +50,7 @@ usage() {
 		echo -e "-t, --tmp\t Custom temporary directory"
 		echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
 		echo -e "-r, --run\t Run binary file contained in .dmg file (experimental)"
+		echo -e "-i, --iso\t Generate an ISO file from directory"
 		echo -e "-f, --force\t Force '$0' to overwrite .img file if it exists"
 		echo -e "-v, --verbose\t Verbose output"
 		echo -e "-vv, --vverbose\t Very verbose output"
@@ -66,6 +69,7 @@ about() {
 		echo "  tmpdir : le répertoire temporaire : $tmpdir"
 		echo "  force : sa valeur est true quand -f ou --force est utilisé : $force"
 		echo "  run : sa valeur est true quand -r ou --run est utilisé : $run"
+		echo "  iso : sa valeur est true quand -i ou --iso est utilisé : $iso"
 		echo "  customname : sa valeur est true quand -n ou --name est utilisé : $customname"
 		echo "  err : empêche les boucles infinies en cas d'erreur : $err"
 		echo -e "\nPour utiliser le mode de débuguage, utilisez la commande : 'DEBUG=1 $0'"
@@ -77,6 +81,7 @@ about() {
 		echo "  tmpdir: temporary directory: $tmpdir"
 		echo "  force: value is true when -f or --force is used: $force"
 		echo "  run: value is true when -r or --run is used: $run"
+		echo "  iso: value is true when -i or --iso is used: $iso"
 		echo "  customname: value is true when -n or --name is used: $customname"
 		echo "  err : stop infinite loop if an error occurring : $err"
 		echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
@@ -202,6 +207,14 @@ umountimg() {
 	verbose msg520 ; udisksctl loop-delete -b $loop || error 100
 }
 
+convertiso() {
+	if $iso; then
+		if [ -s "$app_directory" ]; then
+			genisoimage $v -V "$name" -R -probe -g -o "$app_directory/../$name.iso" "$app_directory"
+		fi
+	fi	
+}
+
 launcher() {
 	if $run; then
 		find "$app_directory"/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r possibleexecutable; do
@@ -300,6 +313,7 @@ do
 		-m|--media)	mediadir="$2"; shift;;
 		-f|--force)	force=true;;
 		-r|--run)	run=true;;
+		-i|--iso)	iso=true;;
 		-v|--verbose)	v="-v";;
 	       -vv|--vverbose)	v="-v"; vv="veeeeery veeeeerbose";;
 		-V|--version)	version; exit 0;;
@@ -330,10 +344,11 @@ verbose msg300 ; mountimg
 verbose msg400 ; copy
 verbose msg500 ; umountimg
 verbose msg600
+convertiso
 launcher
 
 if [[ $DEBUG == 1 ]]; then set +x; fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.3.0. Copyleft 2013.
+# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.4.0. Copyleft 2014.
