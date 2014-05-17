@@ -1,4 +1,5 @@
 SHELL=/bin/bash
+DESTDIR=
 PREFIX=/usr/local
 bindir=$(PREFIX)/bin
 localedir=$(PREFIX)/share/locale
@@ -18,9 +19,9 @@ clean:
 	@rm -v *.mo
 
 install: po
-	$(INSTALL) -Dvm755 dmg2dir		$(bindir)/dmg2dir
-	$(INSTALL) -Dvm644 dmg2dir_fr.mo	$(localedir)/fr/LC_MESSAGES/dmg2dir.mo
-	sed -i 's|@TEXTDOMAINDIR@|$(localedir)|g' $(bindir)/dmg2dir
+	$(INSTALL) -Dvm755 dmg2dir		$(DESTDIR)$(bindir)/dmg2dir
+	$(INSTALL) -Dvm644 dmg2dir_fr.mo	$(DESTDIR)$(localedir)/fr/LC_MESSAGES/dmg2dir.mo
+	sed -i 's|@TEXTDOMAINDIR@|$(localedir)|g' $(DESTDIR)$(bindir)/dmg2dir
 
 uninstall:
 	@rm -v $(bindir)/dmg2dir
