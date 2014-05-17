@@ -1,3 +1,13 @@
+Version 3.0.0 - 2014-05-17 :
+
+	* Full rewrite of script
+	* Support for translations (using PO files)
+	* Remove --media and --about options
+	* Script shows more informations by default
+	* Add option --quiet, and rename option --vverbose in --+verbose
+	* Remove ugly function trackerror() for little functions check*()
+	* Suppress function initialize()
+
 Version 2.4.0 - 2014-05-13 :
 
 	* Add possibility to generate ISO from directory

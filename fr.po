@@ -1,0 +1,165 @@
+#################################################################################################
+#					COMMONS	FUNCTIONS					#
+#################################################################################################
+msgid  "Error %s has occured."
+msgstr "L'erreur %s s'est produite."
+
+
+msgid  "Usage: dmg2dir [OPTIONS] file.dmg"
+msgstr "Usage : dmg2dir [OPTIONS] fichier.dmg"
+
+msgid  "Options:"
+msgstr "Options :"
+
+msgid  "\t-n, --name\t\tCustom name for application directory which will be created"
+msgstr "\t-n, --name\t\tNom personnalisé du répertoire de l'application qui sera créé"
+
+msgid  "\t-p, --path\t\tCustom path for application directory"
+msgstr "\t-p, --path\t\tChemin personnalisé pour le répertoire de l'application"
+
+msgid  "\t-t, --tmp\t\tCustom temporary directory"
+msgstr "\t-t, --tmp\t\tRépertoire temporaire personnalisé"
+
+msgid  "\t-f, --force\t\tOverwrite existing IMG file"
+msgstr "\t-f, --force\t\tÉcrase le fichier IMG existant"
+
+msgid  "\t-r, --run\t\tAttempt to run extracted application (use Darling)"
+msgstr "\t-r, --run\t\tTente d'exécuter l'application extraite (utilise Darling)"
+
+msgid  "\t-i, --iso\t\tGenerate an ISO file from IMG file (use Genisoimage)"
+msgstr "\t-i, --iso\t\tGénère un fichier ISO à partir du fichier IMG (utilise Genisoimage)"
+
+msgid  "\t-d, --iso-only\t\tSame as --iso, without application directory"
+msgstr "\t-d, --iso-only\t\tComme --iso, sans le répertoire de l'application"
+
+msgid  "\t-q, --quiet\t\tRun silently"
+msgstr "\t-q, --quiet\t\tS'exécute silencieusement"
+
+msgid  "\t-v, --verbose\t\tRun verbosely"
+msgstr "\t-v, --verbose\t\tS'exécute verbeusement"
+
+msgid  "\t-w, --+verbose\t\tRun more verbosely"
+msgstr "\t-w, --+verbose\t\tS'exécute plus verbeusement"
+
+msgid  "\t-V, --version\t\tDisplay script version and exit"
+msgstr "\t-V, --version\t\tAffiche la version du script et quitte"
+
+msgid  "\t-h, --help\t\tDisplay this help and exit"
+msgstr "\t-h, --help\t\tAffiche cette aide et quitte"
+
+msgid  "\nPlease report problems at <https://github.com/X0rg/dmg2dir/issues>."
+msgstr "\nMerci de rapporter les problèmes à <https://github.com/X0rg/dmg2dir/issues>."
+
+
+#################################################################################################
+#					VERIFIES FUNCTIONS					#
+#################################################################################################
+msgid  "No output file found."
+msgstr "Fichier de sortie non-trouvé."
+
+msgid  "Variable is empty."
+msgstr "La variable est vide."
+
+msgid  "Variable loop is wrong."
+msgstr "La variable loop est erronée."
+
+msgid  "Directory not fount."
+msgstr "Répertoire non-trouvé."
+
+msgid  "Directory is empty."
+msgstr "Répertoire vide."
+
+msgid  "Command fails."
+msgstr "La commande a échouée."
+
+
+#################################################################################################
+#					MAIN FUNCTIONS						#
+#################################################################################################
+msgid  "Convert %s to %s"
+msgstr "Convertit %s en %s"
+
+msgid  "List devices labels"
+msgstr "Liste les étiquettes des périphériques"
+
+msgid  "Set up loop-device"
+msgstr "Configure le périphérique de type loop"
+
+msgid  "Retrieve loop device name"
+msgstr "Récère le nom du périphérique de type loop"
+
+msgid  "Relist devices labels"
+msgstr "Reliste les étiquettes des périphériques"
+
+msgid  "Get label from lists differences"
+msgstr "Obtient l'étiquette à partir de la différence des listes"
+
+msgid  "No custom name defined, set name as label"
+msgstr "Pas de nom personnalisé défini, affecte le nom comme l'étiquette"
+
+msgid  "Set application directory"
+msgstr "Définit le répertoire de l'application"
+
+msgid  "Make application directory: %s"
+msgstr "Créé le répertoire de l'application : %s"
+
+msgid  "Copy files in application directory"
+msgstr "Copie les fichiers dans le répertoire de l'application"
+
+msgid  "Unmount device (by his label)"
+msgstr "Démonte le périphérique (par son étiquette)"
+
+msgid  "Device unmounted"
+msgstr "Périphérique démonté"
+
+msgid  "Delete loop-device"
+msgstr "Supprime le périphérique de type loop"
+
+msgid  "Device deleted"
+msgstr "Périphérique supprimé"
+
+msgid  "Found file %s, launch it with dyld"
+msgstr "Trouve le fichier %s, lancement avec dyld"
+
+
+#################################################################################################
+#					MAIN							#
+#################################################################################################
+msgid  "You must use arguments. Use --help for help."
+msgstr "Vous devez utiliser des arguments. Utilisez --help pour l'aide."
+
+msgid  "Missing package."
+msgstr "Paquet manquant."
+
+msgid  "You need to be in group 'disk'."
+msgstr "Vous devez être dans le groupe 'disk'."
+
+msgid  "Routines successfully accomplished. Ready!"
+msgstr "Routines accompli avec succès. Prêt !"
+
+msgid  "Make temporary working directory..."
+msgstr "Créé un répertoire de travail temporaire..."
+
+msgid  "Convert DMG file to IMG file..."
+msgstr "Convertit le fichier DMG en un fichier IMG..."
+
+msgid  "File %s exists. Use --force to override it."
+msgstr "Le fichier %s existe déjà. Utilisez --force pour l'écraser."
+
+msgid  "Prepare loop device..."
+msgstr "Prépare le périphérique de type loop..."
+
+msgid  "Mount block device..."
+msgstr "Monte le périphérique de type bloc..."
+
+msgid  "Copy files in application directory..."
+msgstr "Copie les fichiers dans le répertoire de l'application..."
+
+msgid  "Generate ISO file..."
+msgstr "Génète le fichier ISO..."
+
+msgid  "Umount loop device..."
+msgstr "Démonte le périphérique de type loop..."
+
+msgid  "Try to run binary file with Darling..."
+msgstr "Essaye d'exécuter le fichier binaire avec Darling..."

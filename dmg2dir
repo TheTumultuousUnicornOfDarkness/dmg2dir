@@ -1,354 +1,305 @@
 #!/bin/bash
 
-if [[ $DEBUG == 1 ]]; then set -x; fi
+#################################################################################################
+#					ENVIRONMENT						#
+#################################################################################################
+[[ $DEBUG > 1 ]] && set -x
 
+export TEXTDOMAINDIR=@TEXTDOMAINDIR@
+export TEXTDOMAIN=dmg2dir
+udiskcmd=$(command -v udisksctl)
+geniso=$(command -v genisoimage)
+darling=$(command -v dyld)
 args=$#
-mediadir="/run/media/$USER"
-tmpdir="/tmp/dmg2dir"
-force=false
-run=false
-iso=false
-customname=false
-err=false
-color1="\033[32m==>\033[0;1m"
-color2="\033[34m  ->\033[0m"
-color3="\033[1;42m"
-color4="\033[1;41m"
-endcolor="\033[0m"
-version="2.4.0"
+version="3.0.0"
+critical=0
+
+customname=false	# -n
+tmpdir="/tmp/dmg2dir"	# -t
+force=false		# -f
+run=false		# -r
+iso=false		# -i
+nodir=false		# -d
 
 
-usage() {
-	if [[ $(locale -a | grep french) == "french" ]]; then
-		echo "Usage :"
-		echo -e "  $0 [OPTIONS] <fichierdmg>\t\t ou"
-		echo -e "  $0 <fichierdmg> [OPTIONS]\t\t ou"
-		echo "  $0 [OPTIONS] <fichierdmg> [OPTIONS]"
-		echo "...où <fichierdmg> est un fichier dont l'extension est .dmg (conçu pour OS X)"
-		echo -e "\nOptions :"
-		echo -e "-n, --name\t Nom personnalisé du répertoire de l'application qui sera créé"
-		echo -e "-p, --path\t Chemin personnalisé où le répertoire de l'application sera"
-		echo -e "-t, --tmp\t Répertoire temporaire personnalisé"
-		echo -e "-m, --media\t Répertoire où les médias sont montés automatiquement. Il n'est pas nécessaire de la changer"
-		echo -e "-r, --run\t Exécute le fichier binaire contenu dans le fichier .dmg (expérimental)"
-		echo -e "-i, --iso\t Créé un fichier ISO à partir du répertoire"
-		echo -e "-f, --force\t Force '$0' à écraser le fichier .img s'il existe"
-		echo -e "-v, --verbose\t Sortie bavarde"
-		echo -e "-vv, --vverbose\t Sortie très bavarde"
-		echo -e "-V, --version\t Affiche la version du script et quitte"
-		echo -e "-h, --help\t Affiche ce message et quitte"
-		echo -e "-a, --about\t Affiche des informations diverses et quitte"
-	else
-		echo "Usage:"
-		echo -e "  $0 [OPTIONS] <dmgfile>\t\t or"
-		echo -e "  $0 <dmgfile> [OPTIONS]\t\t or"
-		echo "  $0 [OPTIONS] <dmgfile> [OPTIONS]"
-		echo "...where <dmgfile> is a file which extension is .dmg (designed for OS X)"
-		echo -e "\nOptions:"
-		echo -e "-n, --name\t Custom name for application directory which will be created"
-		echo -e "-p, --path\t Custom path where application directory will be"
-		echo -e "-t, --tmp\t Custom temporary directory"
-		echo -e "-m, --media\t Directory where media are automatically mounted. You shouldn't change it"
-		echo -e "-r, --run\t Run binary file contained in .dmg file (experimental)"
-		echo -e "-i, --iso\t Generate an ISO file from directory"
-		echo -e "-f, --force\t Force '$0' to overwrite .img file if it exists"
-		echo -e "-v, --verbose\t Verbose output"
-		echo -e "-vv, --vverbose\t Very verbose output"
-		echo -e "-V, --version\t Display script version and exit"
-		echo -e "-h, --help\t Display this message and exit"
-		echo -e "-a, --about\t Display various informations and exit"
+#################################################################################################
+#					COMMONS	FUNCTIONS					#
+#################################################################################################
+msg() {
+	if ! [[ -n "$quiet" ]]; then
+		str=$1
+		shift
+		printf "\033[1;32m==>\033[0;1m `gettext -s "$str"` \033[0m\n" "$@"
 	fi
 }
 
-about() {
-	if [[ $(locale -a | grep french) == "french" ]]; then
-		echo -e "$0 est un script shell qui extrait les applications OS X depuis un fichier .dmg.\n"
-		echo "Les variables du script sont :"
-		echo "  args : nombre d'arguments utilisés en entrée : $args"
-		echo "  mediadir : le répertoire où les médias sont montés automatiquement : $mediadir"
-		echo "  tmpdir : le répertoire temporaire : $tmpdir"
-		echo "  force : sa valeur est true quand -f ou --force est utilisé : $force"
-		echo "  run : sa valeur est true quand -r ou --run est utilisé : $run"
-		echo "  iso : sa valeur est true quand -i ou --iso est utilisé : $iso"
-		echo "  customname : sa valeur est true quand -n ou --name est utilisé : $customname"
-		echo "  err : empêche les boucles infinies en cas d'erreur : $err"
-		echo -e "\nPour utiliser le mode de débuguage, utilisez la commande : 'DEBUG=1 $0'"
-	else
-		echo -e "$0 is a shell script which extract OS X application from .dmg file.\n"
-		echo "Script's variables are:"
-		echo "  args: number of arguments used in input: $args"
-		echo "  mediadir: directory where media are automatically mounted: $mediadir"
-		echo "  tmpdir: temporary directory: $tmpdir"
-		echo "  force: value is true when -f or --force is used: $force"
-		echo "  run: value is true when -r or --run is used: $run"
-		echo "  iso: value is true when -i or --iso is used: $iso"
-		echo "  customname: value is true when -n or --name is used: $customname"
-		echo "  err : stop infinite loop if an error occurring : $err"
-		echo -e "\nTo use debug mode, use command : 'DEBUG=1 $0'"
+msgv() {
+	if [[ -n "$v" ]]; then
+		str=$1
+		shift
+		printf "\033[1;34m  ->\033[0m `gettext -s "$str"` \n" "$@"
 	fi
+}
+
+msgw() {
+	if [[ -n "$w" ]]; then
+		echo -e "    $1"
+	fi
+}
+
+error() {
+	if [[ -z $err ]]; then
+		err=$2
+		echo -e "`gettext -s "$1"`"
+
+		if [[ -n "$v" ]]; then
+			printf "\033[1;31m `gettext -s 'Error %s has occured.'` \033[0m\n" "$2"
+		fi
+
+		if [[ $critical == 2 ]] ; then
+			$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" 2&>1 /dev/null
+		fi
+		if [[ $critical > 0 ]] ; then
+			$udiskcmd loop-delete --no-user-interaction -b $loop 2&>1 /dev/null
+		fi
+	fi
+
+	exit $err
+}
+
+usage() {
+	gettext -es "Usage: dmg2dir [OPTIONS] file.dmg"
+	gettext -es "Options:"
+	gettext -es "\t-n, --name\t\tCustom name for application directory which will be created"
+	gettext -es "\t-p, --path\t\tCustom path for application directory"
+	gettext -es "\t-t, --tmp\t\tCustom temporary directory"
+	gettext -es "\t-f, --force\t\tOverwrite existing IMG file"
+	gettext -es "\t-r, --run\t\tAttempt to run extracted application (use Darling)"
+	gettext -es "\t-i, --iso\t\tGenerate an ISO file from IMG file (use Genisoimage)"
+	gettext -es "\t-d, --iso-only\t\tSame as --iso, without application directory"
+	gettext -es "\t-q, --quiet\t\tRun silently"
+	gettext -es "\t-v, --verbose\t\tRun verbosely"
+	gettext -es "\t-w, --+verbose\t\tRun more verbosely"
+	gettext -es "\t-V, --version\t\tDisplay script version and exit"
+	gettext -es "\t-h, --help\t\tDisplay this help and exit"
+	gettext -es "\nPlease report problems at <https://github.com/X0rg/dmg2dir/issues>."
 }
 
 version() {
-	if [[ $(locale -a | grep french) == "french" ]]; then
-		echo -e "\n$0. Version $version. Écrit par X0rg.\n"
-	else
-		echo -e "\n$0. Version $version. Written by X0rg.\n"
+	echo -e "DMG2DIR $version"
+	echo -e "Copyleft 2014."
+	echo -e "Written by Xorg."
+}
+
+
+#################################################################################################
+#					VERIFIES FUNCTIONS					#
+#################################################################################################
+checkfile() {
+	if [[ ! -f $1 ]]; then
+		error "No output file found." $2
+	fi
+}
+
+checkvar() {
+	if [[ -z $1 ]]; then
+		error "Variable is empty." $2
+	fi
+
+	if [[ $3 == 2 ]]; then
+		[[ "$1" == "/dev/loop"* ]] && [[ ${#1} != 10 ]] && \
+		error "Variable loop is wrong." $2
+	fi
+}
+
+checkdir() {
+	if [[ ! -d $1 ]]; then
+		error "Directory not fount." $2
+	fi
+
+	if [[ $3 == 2 ]]; then
+		[[ -z "$(ls -A $1)" ]] && \
+		error "Directory is empty." $2
+	fi
+}
+
+checkcode() {
+	if [[ $1 != 0 ]]; then
+		error "Command fails." $2
 	fi
 }
 
 
-
-error() {
-	if [[ $(locale -a | grep french) == "french" ]]; then
-	echo -e "\033[31mErreur $1.\033[0m"
-	else
-	echo -e "\033[31mError $1.\033[0m"
-	fi
-
-	if $err; then
-		exit -1
-	else
-		umountimg
-		exit $1
-	fi
-}
-
-trackerror() {
-	# Usage : trackerror $1=QUOI_CHERCHER $2=CODE_ERREUR_(SI_ERREUR) $3=QUOI_TESTER [$4=PAR_RAPPORT_À]
-
-	case $1 in
-	0100)		if [[ $3 == *ERROR* ]]; then error $2; fi;;
-	0200)		if [[ $3 -le $4 ]]; then error $2; fi;;
-	0300)		if [[ ! $3 == $4 ]]; then error $2; fi;;
-	0400)		if [[ -z $3 ]]; then error $2; fi;;
-	0500)		if [[ ! -d $3 ]]; then error $2; fi;;
-	0600)		if [[ -z $(ls -Ad $3) ]]; then verbose msg610; error $2; fi;;
-	esac
-}
-
+#################################################################################################
+#					MAIN FUNCTIONS						#
+#################################################################################################
 convertdmg() {
-	if [ ! -e $tmpdir/$name.img ] || $force ; then
-
-		if [ ! -z "$v" ]; then
-			verbose msg110 ; output=$(dmg2img $v -i $filetoconvert -o $tmpdir/$name.img)
-			echo $output
-			trackerror 0100 10 $output
-		else
-			output=$(dmg2img -s -i $filetoconvert -o $tmpdir/$name.img)
-			trackerror 0100 11 $output
-		fi
-
-	fi
-}
-
-initialize() {
-	if [[ ! $(lsmod | grep loop) == loop* ]]; then
-		verbose msg190
-		udisksctl loop-setup -f $tmpdir/$name.img &> /dev/null
-		udisksctl loop-delete -b /dev/loop{0,1,2,3,4,5,6,7} &> /dev/null
-		ls /dev/loop{0,1,2,3,4,5,6,7} &> /dev/null
-		if [[ ! $? == 0 ]]; then
-			verbose msg195; error 15
-		fi
-
-	fi
-
-	$(groups | grep -q disk) || (verbose msg198; error 18)
+	msgv "Convert %s to %s" "$filetoconvert" "$tmpdir/$name.img"
+	dmg2img $quiet $v $w -i "$filetoconvert" -o "$tmpdir/$name.img"
+	checkfile "$tmpdir/$name.img" 10
 }
 
 premount() {
-	verbose msg210 ; loop=$(udisksctl loop-setup -f $tmpdir/$name.img) || error 20
-	verbose msg215 ; size=$(expr length "$loop") ; trackerror 0200 26 $size 32
-	verbose msg220 ; cut_end=$((size-1)) ; trackerror 0200 28 $cut_end 31
-	verbose msg225 ; cut_start=$((cut_end-9)) ; trackerror 0200 30 $cut_end 21
+	msgv "List devices labels"
+	dev=$(ls -t -w 100 /dev/disk/by-label)
+	checkvar "$dev" 20
+	msgw "$dev"
 
-	verbose msg230 ; loop=$(echo $loop | cut -c$cut_start-$cut_end) ; trackerror 0300 35 $(expr length $loop) 10
+	msgv "Set up loop-device"
+	loop=$($udiskcmd loop-setup --no-user-interaction -f "$tmpdir/$name.img")
+	checkvar "$loop" 21
+	msgw "$loop"
+	critical=1
 
-	verbose msg240 ; loop_p=$(fdisk -s $loop* | grep $loop\p | grep -Evw \
-		"1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35"\
-		| cut -c1-12) ; trackerror 0300 40 $(expr length $loop_p) 12
-
-	verbose msg250 ; label=$(udisksctl info -b $loop_p | grep IdLabel | cut -c33-) ; trackerror 0400 50 $label
+	msgv "Retrieve loop device name"
+	loop=$(echo ${loop/Mapped file "$tmpdir/$name.img" as } | cut -d. -f1)
+	checkvar "$loop" 22
+	msgw "$loop"
 	
+	msgv "Relist devices labels"
+	dev2=$(ls -t /dev/disk/by-label)
+	checkvar "$dev2" 23
+	msgw "$dev2"
+
+	msgv "Get label from lists differences"
+	label=$(echo ${dev2%$dev} | tr -dc '[[:print:]]')
+	checkvar "$label" 24
+	msgw "$label"
+
 	if ! $customname; then
-		verbose msg260 ; name=$label
-		trackerror 0400 55 $name
+		msgv "No custom name defined, set name as label"
+		name=$label
+		checkvar "$name" 25
+		msgw "$name"
 	fi
+
+	msgv "Set application directory"
+	[[ -n $savepath ]] && app_directory="$savepath/$name" || app_directory=`dirname "$filetoconvert"`/"$name"
+	checkvar "$app_directory" 26
+	msgw "$app_directory"
 }
 
 mountimg() {
-	if [ ! -z "$v" -o ! -z "$vv" ]; then
-		verbose msg310 ; udisksctl mount -b $loop_p || error 60
-	else
-		udisksctl mount -b $loop_p &> /dev/null || error 61
-	fi
+	$udiskcmd mount -b "/dev/disk/by-label/$label" > $output
+	mountpoint=$(grep "$loop" /etc/mtab | awk '{print $2}')
+	checkvar "$mountpoint" 30
+	msgw "$mountpoint"
+	critical=2
 }
 
-copy() {
-	if [[ ! -z $savepath ]]; then
-		verbose msg410 ; app_directory="$savepath/$name" ; trackerror 0400 70 "$app_directory"
-	else
-		verbose msg415 ; app_directory=$(dirname "$filetoconvert")/"$name" ; trackerror 0400 71 "$app_directory"
-	fi
+copydir() {
+	msgv "Make application directory: %s" "$app_directory"
+	mkdir -p $v "$app_directory"
+	checkdir "$app_directory" 40
 
-	verbose msg420 ; mkdir -p $v "$app_directory" || error 75 ; trackerror 0500 76 "$app_directory"
-	verbose msg430 ; cp -aup $v "$mediadir/$label"*/* "$app_directory" || error 80
-	trackerror 0600 85 "$app_directory"/*
-}
-
-umountimg() {
-	err=true
-	if [ ! -z "$v" ]; then
-		verbose msg510 ; udisksctl unmount -b $loop_p || error 90
-	else
-		udisksctl unmount -b $loop_p &> /dev/null || error 91
-	fi
-
-	verbose msg520 ; udisksctl loop-delete -b $loop || error 100
+	msgv "Copy files in application directory"
+	cp -aup $v "$mountpoint/"* "$app_directory"
+	checkdir "$app_directory" 41 2
 }
 
 convertiso() {
-	if $iso; then
-		if [ -s "$app_directory" ]; then
-			genisoimage $v -V "$name" -R -probe -g -o "$app_directory/../$name.iso" "$app_directory"
-		fi
-	fi	
+	$geniso $v -V "$name" -R -probe -g -o "$app_directory.iso" "$mountpoint"
+	checkfile "$app_directory.iso" 50
+}
+
+umountimg() {
+	msgv "Unmount device (by his label)"
+	$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" > $output
+	checkcode "$?" 60
+	msgw "Device unmounted"
+	critical=1
+
+	msgv "Delete loop-device"
+	$udiskcmd loop-delete --no-user-interaction -b $loop
+	checkcode "$?" 61
+	msgw "Device deleted"
+	critical=0
 }
 
 launcher() {
-	if $run; then
-		find "$app_directory"/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r possibleexecutable; do
-			verbose msg700
-			dyld "$possibleexecutable"
-		done
-	fi
-}
-
-verbose() {
-	if [ ! -z $v ]; then
-
-		if [[ $(locale -a | grep french) == "french" ]]; then
-			msg0="\n$color1 Créé le dossier temporaire de travail...$endcolor"
-			msg100="\n$color1 Convertit le fichier DMG en un fichier IMG ...$endcolor"
-			msg190="\n$color1 Initialise le périphérique loop$endcolor"
-			msg195="\n$color4 Impossible d'initialiser le périphérique loop. Merci de charger le module 'loop'.$endcolor"
-			msg198="\n$color4 Vous devez être dans le groupe 'disk'.$endcolor"
-			msg200="\n$color1 Prépare le périphérique loop...$endcolor"
-			msg300="\n$color1 Monte le périphérique loop...$endcolor"
-			msg400="\n$color1 Copie les fichiers...$endcolor"
-			msg500="\n$color1 Démonte le périphérique loop...$endcolor"
-			msg600="\n$color3$label a été extrait dans $app_directory.$endcolor"
-			msg610="\n$color4$app_directory est vide !$endcolor"
-			msg700="\n$color1 Essaye d'exécuter le fichier binaire...$endcolor"
-		else
-			msg0="\n$color1 Make temporary working directory...$endcolor"
-			msg100="\n$color1 Convert DMG file to IMG file...$endcolor"
-			msg190="\n$color1 Initialize loop device$endcolor"
-			msg195="\n$color4 Can't initialize loop device. Please load 'loop' module.$endcolor"
-			msg198="\n$color4 You need to be in the 'disk' group.$endcolor"
-			msg200="\n$color1 Prepare loop device...$endcolor"
-			msg300="\n$color1 Mount loop device...$endcolor"
-			msg400="\n$color1 Copy files...$endcolor"
-			msg500="\n$color1 Umount loop device...$endcolor"
-			msg600="\n$color3$label has been extracted in $app_directory.$endcolor"
-			msg610="\n$color4$app_directory is empty!$endcolor"
-			msg700="\n$color1 Try to run binary file...$endcolor"
-		fi
-
-	fi
-
-	if [[ ! -z $vv ]]; then
-
-		if [[ $(locale -a | grep french) == "french" ]]; then
-			msg110="$color2 Convertit $filetoconvert en $tmpdir/$name.img"
-			msg210="$color2 Configure le périphérique loop depuis le fichier $tmpdir/$name.img"
-			msg215="$color2 Détermine la taille de la variable \$loop"
-			msg220="$color2 Détermine la fin où on coupera dans \$cut_end"
-			msg225="$color2 Détermine le début où on coupera dans \$cut_start"
-			msg230="$color2 Découpe la variable \$loop pour qu'elle contienne le périphérique loop"
-			msg240="$color2 Cherche quelle est la meilleur partition loop"
-			msg250="$color2 Cherche le nom de la partition"
-			msg260="$color2 Pas de nom personnalisé définit. Utilisera \$label $label comme \$name"
-			msg310="$color2 Monte $loop_p'"
-			msg410="$color2 L'option --path est utilisée. Configure la variable \$app_directory comme : $savepath/$name"
-			msg415="$color2 Configure la variable \$app_directory"
-			msg420="$color2 Créé le répertoire $app_directory"
-			msg430="$color2 Copie les fichiers de $mediadir/$label dans $app_directory"
-			msg510="$color2 Démonte $loop_p"
-			msg520="$color2 Supprime le périphérique loop $loop"
-		else
-			msg110="$color2 Convert $filetoconvert to $tmpdir/$name.img"
-			msg210="$color2 Set-up loop device from file $tmpdir/$name.img"
-			msg215="$color2 Determine length of variable \$loop"
-			msg220="$color2 Determine end where we will cut in \$cut_end"
-			msg225="$color2 Determine start where we will cut in \$cut_start"
-			msg230="$color2 Cut variable \$loop to contain loop device"
-			msg240="$color2 Find what is the best loop partition"
-			msg250="$color2 Find partition label"
-			msg260="$color2 No custom name set. Will use \$label $label at \$name"
-			msg310="$color2 Mount $loop_p'"
-			msg410="$color2 Option --path is used. Set variable \$app_directory as : $savepath/$name"
-			msg415="$color2 Set variable \$app_directory"
-			msg420="$color2 Make directory $app_directory"
-			msg430="$color2 Copy files from $mediadir/$label into $app_directory"
-			msg510="$color2 Unmount $loop_p"
-			msg520="$color2 Delete loop device $loop"
-		fi
-
-	fi
-
-	eval msg='$'$1
-	if [[ ! -z $msg ]]; then echo -e "$msg"; fi
+	find "$app_directory"/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r possibleexecutable; do
+		msgv "Found file %s, launch it with dyld" "$possibleexecutable"
+		dyld "$possibleexecutable"
+	done
 }
 
 
-while test $# -gt 0
-do
-	option=$1
-
-	case "$option" in
-		-n|--name)	name="$2";customname=true; shift;;
-		-p|--path)	savepath="$2"; shift;;
-		-t|--tmp)	tmpdir="$2"; shift;;
-		-m|--media)	mediadir="$2"; shift;;
+#################################################################################################
+#					MAIN							#
+#################################################################################################
+# Args
+while [[ $# > 0 ]]; do
+	case "$1" in
+		-n|--name)	shift; name="$1"; customname=true;;
+		-p|--path)	shift; savepath="$1";;
+		-t|--tmp)	shift; mpdir="$1";;
 		-f|--force)	force=true;;
 		-r|--run)	run=true;;
 		-i|--iso)	iso=true;;
-		-v|--verbose)	v="-v";;
-	       -vv|--vverbose)	v="-v"; vv="veeeeery veeeeerbose";;
+		-d|--iso-only)	iso=true; nodir=true;;
+		-q|--quiet)	quiet="-s";;
+		-v|--verbose)	unset quiet; v="-v";;
+		-w|--+verbose)	unset quiet; v="-v"; w=-V;;
 		-V|--version)	version; exit 0;;
 		-h|--help)	usage; exit 0;;
-		-a|--about)	about; exit 0;;
 		- |--)		usage; exit 1;;
 		*)		filetoconvert=$1;;
 	esac
 	shift
 done
 
-
-if [[ $args == 0 && -z $name ]]; then
-	usage
-	exit 2
+# Routines
+if [[ $args < 1 ]] || [[ ! -f "$filetoconvert" ]] || ([[ -z "$name" ]] && $customname); then
+	error "You must use arguments. Use --help for help." 1
+fi
+if [[ -z $udiskcmd ]] || ($run && [[ -z $darling ]]) || ($iso && [[ -z $geniso ]]); then
+	error "Missing package." 1
+fi
+if ! $(groups | grep -q disk); then
+	error "You need to be in group 'disk'."
 fi
 
+[[ -z "$name" ]] && name=$(basename "$filetoconvert" .dmg)
+[[ -z $w      ]] && output="/dev/null" || output="/dev/stdout"
+msg "Routines successfully accomplished. Ready!"
 
-if [ -z $name ]; then
-	name=$(basename "$filetoconvert" .dmg)
+# Start
+if [[ ! -d "$tmpdir" ]]; then
+	msg "Make temporary working directory..."
+	mkdir -p $v "$tmpdir"
 fi
 
-verbose msg0   ; mkdir -p $v $tmpdir
-verbose msg100 ; convertdmg
-initialize
-verbose msg200 ; premount
-verbose msg300 ; mountimg
-verbose msg400 ; copy
-verbose msg500 ; umountimg
-verbose msg600
-convertiso
-launcher
+if [[ ! -f "$tmpdir/$name.img" ]] || $force; then
+	msg "Convert DMG file to IMG file..."
+	convertdmg
+else
+	msgv "File %s exists. Use --force to override it." "$tmpdir/$name.img"
+fi
 
-if [[ $DEBUG == 1 ]]; then set +x; fi
+msg "Prepare loop device..."
+premount
+
+msg "Mount block device..."
+mountimg
+
+if ! $nodir; then
+	msg "Copy files in application directory..."
+	copydir
+fi
+
+if $iso; then
+	msg "Generate ISO file..."
+	convertiso
+fi
+
+msg "Umount loop device..."
+umountimg
+
+if $run && ! $nodir; then
+	msg "Try to run binary file with Darling..."
+	launcher
+fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg?tab=repositories). Version 2.4.0. Copyleft 2014.
+# Written by Xorg (https://github.com/X0rg/dmg2dir). Version 3.0.0. Copyleft 2014.
