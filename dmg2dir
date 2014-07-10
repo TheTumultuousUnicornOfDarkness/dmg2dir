@@ -141,7 +141,7 @@ convertdmg() {
 
 premount() {
 	msgv "List devices labels"
-	dev=$(ls -t -w 100 /dev/disk/by-label)
+	dev=$(ls -t /dev/disk/by-label)
 	checkvar "$dev" 20
 	msgw "$dev"
 
@@ -162,7 +162,7 @@ premount() {
 	msgw "$dev2"
 
 	msgv "Get label from lists differences"
-	label=$(echo ${dev2%$dev} | tr -dc '[[:print:]]')
+	label=$(echo ${dev2%$dev})
 	checkvar "$label" 24
 	msgw "$label"
 
@@ -181,7 +181,7 @@ premount() {
 
 mountimg() {
 	$udiskcmd mount -b "/dev/disk/by-label/$label" > $output
-	mountpoint=$(grep "$loop" /etc/mtab | awk '{print $2}')
+	mountpoint=$(grep "$loop" /etc/mtab | awk '{print $2}' | sed 's/[^[:print:]]//')
 	checkvar "$mountpoint" 30
 	msgw "$mountpoint"
 	critical=2
@@ -193,7 +193,7 @@ copydir() {
 	checkdir "$app_directory" 40
 
 	msgv "Copy files in application directory"
-	cp -aup $v "$mountpoint/"* "$app_directory"
+	cp -aup $v "`echo -e "$mountpoint" | sed 's/[^[:print:]]//'`"*/* "$app_directory"
 	checkdir "$app_directory" 41 2
 }
 
