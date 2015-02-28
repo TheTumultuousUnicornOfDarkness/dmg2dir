@@ -11,7 +11,7 @@ udiskcmd=$(command -v udisksctl)
 geniso=$(command -v genisoimage)
 darling=$(command -v dyld)
 args=$#
-version="3.0.0"
+version="3.0.2"
 critical=0
 
 customname=false	# -n
@@ -87,8 +87,8 @@ usage() {
 
 version() {
 	echo -e "DMG2DIR $version"
-	echo -e "Copyleft 2014."
-	echo -e "Written by Xorg."
+	echo -e "Copyleft 2015."
+	echo -e "\nWritten by Xorg (https://github.com/X0rg)."
 }
 
 
@@ -302,4 +302,4 @@ fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg/dmg2dir). Version 3.0.0. Copyleft 2014.
+# Written by Xorg (https://github.com/X0rg/dmg2dir). Copyleft 2015.
