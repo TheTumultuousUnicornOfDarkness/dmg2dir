@@ -68,7 +68,7 @@ error() {
 }
 
 usage() {
-	gettext -es "Usage: dmg2dir [OPTIONS] file.dmg"
+	gettext -es "Usage: dmg2dir [OPTIONS] dmg_file.dmg"
 	gettext -es "Options:"
 	gettext -es "\t-n, --name\t\tCustom name for application directory which will be created"
 	gettext -es "\t-p, --path\t\tCustom path for application directory"

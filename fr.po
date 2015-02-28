@@ -5,8 +5,8 @@ msgid  "Error %s has occured."
 msgstr "L'erreur %s s'est produite."
 
 
-msgid  "Usage: dmg2dir [OPTIONS] file.dmg"
-msgstr "Usage : dmg2dir [OPTIONS] fichier.dmg"
+msgid  "Usage: dmg2dir [OPTIONS] dmg_file.dmg"
+msgstr "Usage : dmg2dir [OPTIONS] fichier_dmg.dmg"
 
 msgid  "Options:"
 msgstr "Options :"
