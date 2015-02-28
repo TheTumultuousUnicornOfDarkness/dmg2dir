@@ -1,0 +1,76 @@
+.\" Manpage for dmg2dir (English).
+.TH dmg2dir 1 "28 February 2015" "DMG2DIR 3.0.2" "DMG2DIR Manual"
+.SH NAME
+dmg2dir \- extract OS X application from .dmg file.
+.SH SYNOPSIS
+\fBdmg2dir\fR [\fIOPTIONS\fR] dmg_file.dmg
+.SH DESCRIPTION
+DMG2DIR is a shell script which extract OS X application from .dmg file. In a basic usage, the application will be extracted in a directory, but it is also possible to convert it in ISO file.
+.SH OPTIONS
+.B \-n, \-\-name
+.RS 4
+Custom name for application directory which will be created.
+Set the name used for directory. If not specified, default value is the name of .dmg file.
+.RE
+.PP
+.B \-p, \-\-path
+.RS 4
+Custom path for application directory.
+Change where to save files. If not specified, default value is the same directory where .dmg file is located.
+.RE
+.PP
+.B \-t, \-\-tmp
+.RS 4
+Custom temporary directory.
+Change where to save temporary files (like .img files). Default value is \fI/tmp/dmg2dir\fR.
+.RE
+.PP
+.B \-r, \-\-run
+.RS 4
+Attempt to run extracted application.
+If \fBDarling\fR is installed on the system, try to run the OS X application on your GNU/Linux system.
+.RE
+.PP
+.B \-i, \-\-iso
+.RS 4
+Generate an ISO file from IMG file.
+If \fBGenisoimage\fR is installed on the system, convert .dmg file on a .iso file besides the application directory.
+.RE
+.PP
+.B \-d, \-\-iso-only
+.RS 4
+Same as \fI--iso\fR, without application directory.
+If \fBGenisoimage\fR is installed on the system, convert .dmg file on a .iso file without making the application directory.
+.RE
+.PP
+.B \-q, \-\-quiet
+.RS 4
+Run silently.
+Don't print anything output.
+.RE
+.PP
+.B \-v, \-\-verbose
+.RS 4
+Run verbosely.
+Print more output during processing.
+.RE
+.PP
+.B \-w, \-\-\+verbose
+.RS 4
+Run more verbosely.
+Print a lot of output during processing. Useful to debug or understand how works the script.
+.RE
+.PP
+.B \-V, \-\-version
+.RS 4
+Display script version and exit.
+.RE
+.PP
+.B \-h, \-\-help
+.RS 4
+Display help and exit.
+.RE
+.SH BUGS
+Please report bugs by opening a new issue here: \fIhttps://github.com/X0rg/dmg2dir/issues\fR.
+.SH AUTHOR
+Xorg <https://github.com/X0rg/dmg2dir>
