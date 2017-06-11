@@ -232,7 +232,7 @@ while [[ $# > 0 ]]; do
 	case "$1" in
 		-n|--name)	shift; name="$1"; customname=true;;
 		-p|--path)	shift; savepath="$1";;
-		-t|--tmp)	shift; mpdir="$1";;
+		-t|--tmp)	shift; tmpdir="$1";;
 		-f|--force)	force=true;;
 		-r|--run)	run=true;;
 		-i|--iso)	iso=true;;
