@@ -57,10 +57,10 @@ error() {
 		fi
 
 		if [[ $critical == 2 ]] ; then
-			$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" 2&>1 /dev/null
+			$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" 2>&1 /dev/null
 		fi
 		if [[ $critical > 0 ]] ; then
-			$udiskcmd loop-delete --no-user-interaction -b $loop 2&>1 /dev/null
+			$udiskcmd loop-delete --no-user-interaction -b $loop 2>&1 /dev/null
 		fi
 	fi
 
