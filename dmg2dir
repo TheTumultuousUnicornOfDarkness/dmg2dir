@@ -11,7 +11,7 @@ udiskcmd=$(command -v udisksctl)
 geniso=$(command -v genisoimage)
 darling=$(command -v dyld)
 args=$#
-version="3.0.2"
+version="3.0.3"
 critical=0
 
 customname=false	# -n

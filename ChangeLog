@@ -1,3 +1,14 @@
+Version 3.0.3 - 2018-03-29 :
+
+	* Fix bug with tmpdir
+	* Fix redirection to /dev/null
+
+
+Version 3.0.2 - 2015-02-28 :
+
+	* Add man-pages (English and French)
+	
+	
 Version 3.0.1 - 2014-04-10 :
 
 	* Fix bug with unprintable characters
