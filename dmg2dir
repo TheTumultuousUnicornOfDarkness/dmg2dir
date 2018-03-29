@@ -87,7 +87,7 @@ usage() {
 
 version() {
 	echo -e "DMG2DIR $version"
-	echo -e "Copyleft 2015."
+	echo -e "Copyleft 2018."
 	echo -e "\nWritten by Xorg (https://github.com/X0rg)."
 }
 
@@ -302,4 +302,4 @@ fi
 
 exit 0
 
-# Written by Xorg (https://github.com/X0rg/dmg2dir). Copyleft 2015.
+# Written by Xorg (https://github.com/X0rg/dmg2dir). Copyleft 2018.
