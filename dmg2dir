@@ -180,7 +180,7 @@ copydir() {
 }
 
 convertiso() {
-	$geniso $v -V "$name" -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
+	$geniso $v -V "$name" -iso-level 3 -UDF -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
 	checkfile "$app_directory.iso" 50
 }
 
