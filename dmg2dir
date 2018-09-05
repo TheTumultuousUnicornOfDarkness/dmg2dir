@@ -53,7 +53,7 @@ error() {
 		echo -e "`gettext -s "$1"`"
 
 		if [[ -n "$v" ]]; then
-			printf "\033[1;31m `gettext -s 'Error %s has occured.'` \033[0m\n" "$2"
+			printf "\033[1;31m `gettext -s 'Error %s has occurred.'` \033[0m\n" "$2"
 		fi
 
 		if [[ $critical == 2 ]] ; then
