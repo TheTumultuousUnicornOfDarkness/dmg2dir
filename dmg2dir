@@ -57,10 +57,13 @@ error() {
 		fi
 
 		if [[ $critical == 2 ]] ; then
-			$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" 2>&1 /dev/null
+			for part in ${loop}p*; do
+				$udiskcmd unmount --no-user-interaction --block-device $part 2>&1 /dev/null
+			done
 		fi
+
 		if [[ $critical > 0 ]] ; then
-			$udiskcmd loop-delete --no-user-interaction -b $loop 2>&1 /dev/null
+			$udiskcmd loop-delete --no-user-interaction --block-device $loop 2>&1 /dev/null
 		fi
 	fi
 
@@ -105,11 +108,6 @@ checkvar() {
 	if [[ -z $1 ]]; then
 		error "Variable is empty." $2
 	fi
-
-	if [[ $3 == 2 ]]; then
-		[[ "$1" == "/dev/loop"* ]] && [[ ${#1} != 10 ]] && \
-		error "Variable loop is wrong." $2
-	fi
 }
 
 checkdir() {
@@ -139,87 +137,75 @@ convertdmg() {
 	checkfile "$tmpdir/$name.img" 10
 }
 
-premount() {
-	msgv "List devices labels"
-	dev=$(ls -t /dev/disk/by-label)
-	checkvar "$dev" 20
-	msgw "$dev"
-
+addloop() {
 	msgv "Set up loop-device"
-	loop=$($udiskcmd loop-setup --no-user-interaction -f "$tmpdir/$name.img")
-	checkvar "$loop" 21
+	loop=$($udiskcmd loop-setup --no-user-interaction --read-only --file "$tmpdir/$name.img")
+	checkvar "$loop" 20
 	msgw "$loop"
 	critical=1
 
 	msgv "Retrieve loop device name"
-	loop=$(echo ${loop/Mapped file "$tmpdir/$name.img" as } | cut -d. -f1)
-	checkvar "$loop" 22
+	loop=${loop%.}
+	loop=${loop#*/dev/loop}
+	checkvar "$loop" 21
+	loop="/dev/loop$loop"
 	msgw "$loop"
-	
-	msgv "Relist devices labels"
-	dev2=$(ls -t /dev/disk/by-label)
-	checkvar "$dev2" 23
-	msgw "$dev2"
-
-	msgv "Get label from lists differences"
-	label=$(echo ${dev2%$dev})
-	checkvar "$label" 24
-	msgw "$label"
-
-	if ! $customname; then
-		msgv "No custom name defined, set name as label"
-		name=$label
-		checkvar "$name" 25
-		msgw "$name"
-	fi
 
 	msgv "Set application directory"
-	[[ -n $savepath ]] && app_directory="$savepath/$name" || app_directory=`dirname "$filetoconvert"`/"$name"
-	checkvar "$app_directory" 26
+	app_directory="$savepath/$name"
+	checkvar "$app_directory" 22
 	msgw "$app_directory"
 }
 
-mountimg() {
-	$udiskcmd mount -b "/dev/disk/by-label/$label" > $output
-	mountpoint=$(grep "$loop" /etc/mtab | awk '{print $2}' | sed 's/[^[:print:]]//')
+mountpart() {
+	local part=$1
+
+	msgv "Mount loop-device partition %s" "$part"
+	$udiskcmd mount --block-device $part > $output
+	mountpoint=$(findmnt --noheadings --output TARGET $part)
 	checkvar "$mountpoint" 30
 	msgw "$mountpoint"
 	critical=2
+
+	if $iso; then
+		local label=$(basename "$mountpoint")
+		ln -sf $v "$mountpoint" "$tmpdir/$name/$label"
+	fi
 }
 
 copydir() {
-	msgv "Make application directory: %s" "$app_directory"
-	mkdir -p $v "$app_directory"
-	checkdir "$app_directory" 40
-
 	msgv "Copy files in application directory"
-	cp -aup $v "`echo -e "$mountpoint" | sed 's/[^[:print:]]//'`"*/* "$app_directory"
-	checkdir "$app_directory" 41 2
+	cp -Raup $v "$mountpoint" "$app_directory"
+	checkdir "$app_directory" 40 2
 }
 
 convertiso() {
-	$geniso $v -V "$name" -R -probe -g -o "$app_directory.iso" "$mountpoint"
+	$geniso $v -V "$name" -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
 	checkfile "$app_directory.iso" 50
 }
 
-umountimg() {
-	msgv "Unmount device (by his label)"
-	$udiskcmd unmount --no-user-interaction -b "/dev/disk/by-label/$label" > $output
+umountpart() {
+	local part=$1
+
+	msgv "Unmount loop-device partition %s" "$part"
+	$udiskcmd unmount --no-user-interaction --block-device $part > $output
 	checkcode "$?" 60
 	msgw "Device unmounted"
 	critical=1
+}
 
+delloop() {
 	msgv "Delete loop-device"
-	$udiskcmd loop-delete --no-user-interaction -b $loop
-	checkcode "$?" 61
+	$udiskcmd loop-delete --no-user-interaction --block-device $loop
+	checkcode "$?" 70
 	msgw "Device deleted"
 	critical=0
 }
 
 launcher() {
-	find "$app_directory"/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r possibleexecutable; do
-		msgv "Found file %s, launch it with dyld" "$possibleexecutable"
-		dyld "$possibleexecutable"
+	find "$app_directory"/*/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r executable; do
+		msgv "Found file %s, launch it with dyld" "$executable"
+		dyld "$executable"
 	done
 }
 
@@ -255,19 +241,22 @@ fi
 if [[ -z $udiskcmd ]] || ($run && [[ -z $darling ]]) || ($iso && [[ -z $geniso ]]); then
 	error "Missing package." 1
 fi
-if ! $(groups | grep -q disk); then
-	error "You need to be in group 'disk'."
-fi
+#if ! $(groups | grep -q disk); then
+#	error "You need to be in group 'disk'."
+#fi
 
 [[ -z "$name" ]] && name=$(basename "$filetoconvert" .dmg)
+[[ -z "$savepath" ]] && savepath=$(dirname "$filetoconvert")
 [[ -z $w      ]] && output="/dev/null" || output="/dev/stdout"
+vtree="$tmpdir/$name"
 msg "Routines successfully accomplished. Ready!"
 
 # Start
-if [[ ! -d "$tmpdir" ]]; then
+if [[ ! -d "$tmpdir" ]] || [[ ! -d "$tmpdir/$name" ]] ; then
 	msg "Make temporary working directory..."
 	mkdir -p $v "$tmpdir"
 fi
+$iso && mkdir -p $v "$vtree"
 
 if [[ ! -f "$tmpdir/$name.img" ]] || $force; then
 	msg "Convert DMG file to IMG file..."
@@ -277,23 +266,31 @@ else
 fi
 
 msg "Prepare loop device..."
-premount
-
-msg "Mount block device..."
-mountimg
+addloop
 
 if ! $nodir; then
-	msg "Copy files in application directory..."
-	copydir
+	msgv "Make application directory: %s" "$app_directory"
+	mkdir -p $v "$app_directory"
 fi
+
+for part in ${loop}p*; do
+	mountpart $part
+	if ! $nodir; then
+		copydir
+	fi
+done
 
 if $iso; then
 	msg "Generate ISO file..."
 	convertiso
+	rm -rf $v "$vtree"
 fi
 
-msg "Umount loop device..."
-umountimg
+for part in ${loop}p*; do
+	umountpart $part
+done
+
+delloop
 
 if $run && ! $nodir; then
 	msg "Try to run binary file with Darling..."
