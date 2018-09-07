@@ -100,6 +100,16 @@ version() {
 #################################################################################################
 #					VERIFIES FUNCTIONS					#
 #################################################################################################
+checkdep() {
+	local command="$1"
+	local depname="$2"
+	local code="$3"
+
+	if [[ -z "$command" ]]; then
+		error "Dependency $depname is required." $code
+	fi
+}
+
 checkfile() {
 	if [[ ! -f $1 ]]; then
 		error "No output file found." $2
@@ -235,9 +245,9 @@ while true ; do
 		-p|--path)	shift; savepath="$1";;
 		-t|--tmp)	shift; tmpdir="$1";;
 		-f|--force)	force=true;;
-		-r|--run)	run=true;;
-		-i|--iso)	iso=true;;
-		-d|--iso-only)	iso=true; nodir=true;;
+		-r|--run)	checkdep "$darling" "Darling" 1; run=true;;
+		-i|--iso)	checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true;;
+		-d|--iso-only)	checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true; nodir=true;;
 		-q|--quiet)	quiet="-s";;
 		-v|--verbose)	unset quiet; [[ -z $verbose1 ]] && verbose1="-v" || verbose2="-V";;
 		-V|--version)	version; exit 0;;
@@ -248,18 +258,17 @@ while true ; do
 	shift
 done
 
-# Routines
-filetoconvert=$1
-if [[ -z $filetoconvert ]]; then
+# Prerequisites
+msg "Check prerequisites..."
+filetoconvert="$1"
+if [[ -z "$filetoconvert" ]]; then
 	usage
 	exit 1
 fi
 if [[ ! -f "$filetoconvert" ]]; then
 	error "File doesn't exist." 1
 fi
-if [[ -z $udiskcmd ]] || ($run && [[ -z $darling ]]) || ($iso && [[ -z $geniso ]]); then
-	error "Missing package." 1
-fi
+checkdep "$udiskcmd" "udisks2" 1
 #if ! $(groups | grep -q disk); then
 #	error "You need to be in group 'disk'."
 #fi
@@ -268,7 +277,6 @@ fi
 [[ -z "$savepath" ]] && savepath=$(dirname "$filetoconvert")
 [[ -z "$verbose2" ]] && output="/dev/null" || output="/dev/stdout"
 vtree="$tmpdir/$name"
-msg "Routines successfully accomplished. Ready!"
 
 # Start
 if [[ ! -d "$tmpdir" ]] || [[ ! -d "$tmpdir/$name" ]] ; then
