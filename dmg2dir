@@ -202,16 +202,14 @@ umountpart() {
 	local part=$1
 
 	msgverbose1 "Unmount loop-device partition %s" "$part"
-	$udiskcmd unmount --no-user-interaction --block-device $part > $output
+	$udiskcmd unmount --no-user-interaction --force --block-device $part > $output
 	checkcode "$?" 60
 	msgverbose2 "Device unmounted"
 	critical=1
 }
 
 delloop() {
-	local empty=$($udiskcmd info --block-device $loop | grep "Partitions:")
-
-	if [[ -n "$empty" ]]; then
+	if [[ -f $loop* ]]; then
 		msgverbose1 "Delete loop-device"
 		$udiskcmd loop-delete --no-user-interaction --block-device $loop
 		checkcode "$?" 70
