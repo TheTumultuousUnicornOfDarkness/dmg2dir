@@ -36,16 +36,16 @@ msg() {
 	fi
 }
 
-msgv() {
-	if [[ -n "$v" ]]; then
+msgverbose1() {
+	if [[ -n "$verbose1" ]]; then
 		str=$1
 		shift
 		printf "\033[1;34m  ->\033[0m `gettext -s "$str"` \n" "$@"
 	fi
 }
 
-msgw() {
-	if [[ -n "$w" ]]; then
+msgverbose2() {
+	if [[ -n "$verbose2" ]]; then
 		echo -e "    $1"
 	fi
 }
@@ -55,7 +55,7 @@ error() {
 		err=$2
 		echo -e "`gettext -s "$1"`"
 
-		if [[ -n "$v" ]]; then
+		if [[ -n "$verbose1" ]]; then
 			printf "\033[1;31m `gettext -s 'Error %s has occurred.'` \033[0m\n" "$2"
 		fi
 
@@ -83,9 +83,8 @@ usage() {
 	gettext -es "\t-r, --run\t\tAttempt to run extracted application (use Darling)"
 	gettext -es "\t-i, --iso\t\tGenerate an ISO file from IMG file (use Genisoimage)"
 	gettext -es "\t-d, --iso-only\t\tSame as --iso, without application directory"
-	gettext -es "\t-q, --quiet\t\tRun silently"
-	gettext -es "\t-v, --verbose\t\tRun verbosely"
-	gettext -es "\t-w, --+verbose\t\tRun more verbosely"
+	gettext -es "\t-q, --quiet\t\tBe silent"
+	gettext -es "\t-v, --verbose\t\tBe verbose (-vv for very verbose)"
 	gettext -es "\t-V, --version\t\tDisplay script version and exit"
 	gettext -es "\t-h, --help\t\tDisplay this help and exit"
 	gettext -es "\nPlease report problems at <https://github.com/X0rg/dmg2dir/issues>."
@@ -135,79 +134,79 @@ checkcode() {
 #					MAIN FUNCTIONS						#
 #################################################################################################
 convertdmg() {
-	msgv "Convert %s to %s" "$filetoconvert" "$tmpdir/$name.img"
-	dmg2img $quiet $v $w -i "$filetoconvert" -o "$tmpdir/$name.img"
+	msgverbose1 "Convert %s to %s" "$filetoconvert" "$tmpdir/$name.img"
+	dmg2img $quiet $verbose1 $verbose2 -i "$filetoconvert" -o "$tmpdir/$name.img"
 	checkfile "$tmpdir/$name.img" 10
 }
 
 addloop() {
-	msgv "Set up loop-device"
+	msgverbose1 "Set up loop-device"
 	loop=$($udiskcmd loop-setup --no-user-interaction --read-only --file "$tmpdir/$name.img")
 	checkvar "$loop" 20
-	msgw "$loop"
+	msgverbose2 "$loop"
 	critical=1
 
-	msgv "Retrieve loop device name"
+	msgverbose1 "Retrieve loop device name"
 	loop=${loop%.}
 	loop=${loop#*/dev/loop}
 	checkvar "$loop" 21
 	loop="/dev/loop$loop"
-	msgw "$loop"
+	msgverbose2 "$loop"
 
-	msgv "Set application directory"
+	msgverbose1 "Set application directory"
 	app_directory="$savepath/$name"
 	checkvar "$app_directory" 22
-	msgw "$app_directory"
+	msgverbose2 "$app_directory"
 }
 
 mountpart() {
 	local part=$1
 
-	msgv "Mount loop-device partition %s" "$part"
+	msgverbose1 "Mount loop-device partition %s" "$part"
 	$udiskcmd mount --block-device $part > $output
 	mountpoint=$(findmnt --noheadings --output TARGET $part)
 	checkvar "$mountpoint" 30
-	msgw "$mountpoint"
+	msgverbose2 "$mountpoint"
 	critical=2
 
 	if $iso; then
 		local label=$(basename "$mountpoint")
-		ln -sf $v "$mountpoint" "$tmpdir/$name/$label"
+		ln -sf $verbose1 "$mountpoint" "$tmpdir/$name/$label"
 	fi
 }
 
 copydir() {
-	msgv "Copy files in application directory"
-	cp -Raup $v "$mountpoint" "$app_directory"
+	msgverbose1 "Copy files in application directory"
+	cp -Raup $verbose1 "$mountpoint" "$app_directory"
 	checkdir "$app_directory" 40 2
 }
 
 convertiso() {
-	$geniso $v -V "$name" -iso-level 3 -UDF -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
+	$geniso $verbose1 -V "$name" -iso-level 3 -UDF -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
 	checkfile "$app_directory.iso" 50
 }
 
 umountpart() {
 	local part=$1
 
-	msgv "Unmount loop-device partition %s" "$part"
+	msgverbose1 "Unmount loop-device partition %s" "$part"
 	$udiskcmd unmount --no-user-interaction --block-device $part > $output
 	checkcode "$?" 60
-	msgw "Device unmounted"
+	msgverbose2 "Device unmounted"
 	critical=1
 }
 
 delloop() {
-	msgv "Delete loop-device"
+	msgverbose1 "Delete loop-device"
 	$udiskcmd loop-delete --no-user-interaction --block-device $loop
 	checkcode "$?" 70
-	msgw "Device deleted"
+	msgverbose2 "Device deleted"
 	critical=0
 }
 
 launcher() {
 	find "$app_directory"/*/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r executable; do
-		msgv "Found file %s, launch it with dyld" "$executable"
+		msgverbose1 "Found file %s, launch it with dyld" "$executable"
 		dyld "$executable"
 	done
 }
@@ -233,8 +232,7 @@ while true ; do
 		-i|--iso)	iso=true;;
 		-d|--iso-only)	iso=true; nodir=true;;
 		-q|--quiet)	quiet="-s";;
-		-v|--verbose)	unset quiet; v="-v";;
-		-w|--+verbose)	unset quiet; v="-v"; w=-V;;
+		-v|--verbose)	unset quiet; [[ -z $verbose1 ]] && verbose1="-v" || verbose2="-V";;
 		-V|--version)	version; exit 0;;
 		-h|--help)	usage; exit 0;;
 		--)		shift; break;;
@@ -261,30 +259,30 @@ fi
 
 [[ -z "$name" ]] && name=$(basename "$filetoconvert" .dmg)
 [[ -z "$savepath" ]] && savepath=$(dirname "$filetoconvert")
-[[ -z $w      ]] && output="/dev/null" || output="/dev/stdout"
+[[ -z "$verbose2" ]] && output="/dev/null" || output="/dev/stdout"
 vtree="$tmpdir/$name"
 msg "Routines successfully accomplished. Ready!"
 
 # Start
 if [[ ! -d "$tmpdir" ]] || [[ ! -d "$tmpdir/$name" ]] ; then
 	msg "Make temporary working directory..."
-	mkdir -p $v "$tmpdir"
+	mkdir -p $verbose1 "$tmpdir"
 fi
-$iso && mkdir -p $v "$vtree"
+$iso && mkdir -p $verbose1 "$vtree"
 
 if [[ ! -f "$tmpdir/$name.img" ]] || $force; then
 	msg "Convert DMG file to IMG file..."
 	convertdmg
 else
-	msgv "File %s exists. Use --force to override it." "$tmpdir/$name.img"
+	msgverbose1 "File %s exists. Use --force to override it." "$tmpdir/$name.img"
 fi
 
 msg "Prepare loop device..."
 addloop
 
 if ! $nodir; then
-	msgv "Make application directory: %s" "$app_directory"
-	mkdir -p $v "$app_directory"
+	msgverbose1 "Make application directory: %s" "$app_directory"
+	mkdir -p $verbose1 "$app_directory"
 fi
 
 for part in ${loop}p*; do
@@ -297,7 +295,7 @@ done
 if $iso; then
 	msg "Generate ISO file..."
 	convertiso
-	rm -rf $v "$vtree"
+	rm -rf $verbose1 "$vtree"
 fi
 
 for part in ${loop}p*; do
