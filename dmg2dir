@@ -14,12 +14,16 @@ args=$#
 version="3.0.3"
 critical=0
 
-customname=false	# -n
+name=			# -n
+savepath=		# -p
 tmpdir="/tmp/dmg2dir"	# -t
 force=false		# -f
 run=false		# -r
 iso=false		# -i
 nodir=false		# -d
+quiet=			# -q
+v=			# -v
+w=			# -w
 
 
 #################################################################################################
@@ -216,7 +220,7 @@ launcher() {
 # Args
 while [[ $# > 0 ]]; do
 	case "$1" in
-		-n|--name)	shift; name="$1"; customname=true;;
+		-n|--name)	shift; name="$1";;
 		-p|--path)	shift; savepath="$1";;
 		-t|--tmp)	shift; tmpdir="$1";;
 		-f|--force)	force=true;;
@@ -235,7 +239,7 @@ while [[ $# > 0 ]]; do
 done
 
 # Routines
-if [[ $args < 1 ]] || [[ ! -f "$filetoconvert" ]] || ([[ -z "$name" ]] && $customname); then
+if [[ $args < 1 ]] || [[ ! -f "$filetoconvert" ]]; then
 	error "You must use arguments. Use --help for help." 1
 fi
 if [[ -z $udiskcmd ]] || ($run && [[ -z $darling ]]) || ($iso && [[ -z $geniso ]]); then
