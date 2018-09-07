@@ -200,10 +200,14 @@ umountpart() {
 }
 
 delloop() {
-	msgverbose1 "Delete loop-device"
-	$udiskcmd loop-delete --no-user-interaction --block-device $loop
-	checkcode "$?" 70
-	msgverbose2 "Device deleted"
+	local empty=$($udiskcmd info --block-device $loop | grep "Partitions:")
+
+	if [[ -n "$empty" ]]; then
+		msgverbose1 "Delete loop-device"
+		$udiskcmd loop-delete --no-user-interaction --block-device $loop
+		checkcode "$?" 70
+		msgverbose2 "Device deleted"
+	fi
 	critical=0
 }
 
