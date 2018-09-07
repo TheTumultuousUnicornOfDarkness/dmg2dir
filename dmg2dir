@@ -10,7 +10,6 @@ export TEXTDOMAIN=dmg2dir
 udiskcmd=$(command -v udisksctl)
 geniso=$(command -v genisoimage)
 darling=$(command -v dyld)
-args=$#
 version="3.0.3"
 critical=0
 
@@ -218,7 +217,13 @@ launcher() {
 #					MAIN							#
 #################################################################################################
 # Args
-while [[ $# > 0 ]]; do
+OPTS=`getopt -o n:p:t:fridqvwVh --long name:,path:,tmp:,force,run,iso,iso-only,quiet,verbose,version,help -n 'dmg2dir' -- "$@"`
+if [[ $? != 0 ]]; then
+	error "Failed parsing options." 1
+fi
+
+eval set -- "$OPTS"
+while true ; do
 	case "$1" in
 		-n|--name)	shift; name="$1";;
 		-p|--path)	shift; savepath="$1";;
@@ -232,15 +237,20 @@ while [[ $# > 0 ]]; do
 		-w|--+verbose)	unset quiet; v="-v"; w=-V;;
 		-V|--version)	version; exit 0;;
 		-h|--help)	usage; exit 0;;
-		- |--)		usage; exit 1;;
-		*)		filetoconvert=$1;;
+		--)		shift; break;;
+		*) echo "Internal error!"; exit 1;;
 	esac
 	shift
 done
 
 # Routines
-if [[ $args < 1 ]] || [[ ! -f "$filetoconvert" ]]; then
-	error "You must use arguments. Use --help for help." 1
+filetoconvert=$1
+if [[ -z $filetoconvert ]]; then
+	usage
+	exit 1
+fi
+if [[ ! -f "$filetoconvert" ]]; then
+	error "File doesn't exist." 1
 fi
 if [[ -z $udiskcmd ]] || ($run && [[ -z $darling ]]) || ($iso && [[ -z $geniso ]]); then
 	error "Missing package." 1
