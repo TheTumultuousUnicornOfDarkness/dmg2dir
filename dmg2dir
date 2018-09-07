@@ -16,13 +16,15 @@ critical=0
 name=			# -n
 savepath=		# -p
 tmpdir="/tmp/dmg2dir"	# -t
-force=false		# -f
 run=false		# -r
 iso=false		# -i
-nodir=false		# -d
+noappdir=false		# -d
 quiet=			# -q
-v=			# -v
-w=			# -w
+verbose1=		# -v
+verbose2=		# -vv
+overwriteimg=false	# --overwrite-img
+overwritedir=false	# --overwrite-dir
+overwriteiso=false	# --overwrite-iso
 
 
 #################################################################################################
@@ -79,7 +81,6 @@ usage() {
 	gettext -es "\t-n, --name\t\tCustom name for application directory which will be created"
 	gettext -es "\t-p, --path\t\tCustom path for application directory"
 	gettext -es "\t-t, --tmp\t\tCustom temporary directory"
-	gettext -es "\t-f, --force\t\tOverwrite existing IMG file"
 	gettext -es "\t-r, --run\t\tAttempt to run extracted application (use Darling)"
 	gettext -es "\t-i, --iso\t\tGenerate an ISO file from IMG file (use Genisoimage)"
 	gettext -es "\t-d, --iso-only\t\tSame as --iso, without application directory"
@@ -87,6 +88,9 @@ usage() {
 	gettext -es "\t-v, --verbose\t\tBe verbose (-vv for very verbose)"
 	gettext -es "\t-V, --version\t\tDisplay script version and exit"
 	gettext -es "\t-h, --help\t\tDisplay this help and exit"
+	gettext -es "\t    --overwrite-img\t\tOverwrite existing IMG file"
+	gettext -es "\t    --overwrite-dir\t\tOverwrite existing application directory"
+	gettext -es "\t    --overwrite-iso\t\tOverwrite existing ISO file"
 	gettext -es "\nPlease report problems at <https://github.com/X0rg/dmg2dir/issues>."
 }
 
@@ -162,11 +166,6 @@ addloop() {
 	checkvar "$loop" 21
 	loop="/dev/loop$loop"
 	msgverbose2 "$loop"
-
-	msgverbose1 "Set application directory"
-	app_directory="$savepath/$name"
-	checkvar "$app_directory" 22
-	msgverbose2 "$app_directory"
 }
 
 mountpart() {
@@ -190,13 +189,13 @@ mountpart() {
 
 copydir() {
 	msgverbose1 "Copy files in application directory"
-	cp -Raup $verbose1 "$mountpoint" "$app_directory"
-	checkdir "$app_directory" 40 2
+	cp -Raup $verbose1 "$mountpoint" "$appdir"
+	checkdir "$appdir" 40 2
 }
 
 convertiso() {
-	$geniso $verbose1 -V "$name" -iso-level 3 -UDF -R -probe -g -posix-L -o "$app_directory.iso" "$vtree"
-	checkfile "$app_directory.iso" 50
+	$geniso $verbose1 -V "$name" -iso-level 3 -UDF -R -probe -g -posix-L -o "$appdir.iso" "$vtree"
+	checkfile "$appdir.iso" 50
 }
 
 umountpart() {
@@ -222,7 +221,7 @@ delloop() {
 }
 
 launcher() {
-	find "$app_directory"/*/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r executable; do
+	find "$appdir"/*/*.app/Contents/MacOS -exec file '{}' \; | grep "Mach-O" | grep "executable" | cut -f1 -d: | while IFS= read -r executable; do
 		msgverbose1 "Found file %s, launch it with dyld" "$executable"
 		dyld "$executable"
 	done
@@ -233,7 +232,7 @@ launcher() {
 #					MAIN							#
 #################################################################################################
 # Args
-OPTS=`getopt -o n:p:t:fridqvwVh --long name:,path:,tmp:,force,run,iso,iso-only,quiet,verbose,version,help -n 'dmg2dir' -- "$@"`
+OPTS=`getopt -o n:p:t:ridqvwVh --long name:,path:,tmp:,run,iso,iso-only,quiet,verbose,version,help,overwrite-img,overwrite-dir,overwrite-iso -n 'dmg2dir' -- "$@"`
 if [[ $? != 0 ]]; then
 	error "Failed parsing options." 1
 fi
@@ -241,19 +240,21 @@ fi
 eval set -- "$OPTS"
 while true ; do
 	case "$1" in
-		-n|--name)	shift; name="$1";;
-		-p|--path)	shift; savepath="$1";;
-		-t|--tmp)	shift; tmpdir="$1";;
-		-f|--force)	force=true;;
-		-r|--run)	checkdep "$darling" "Darling" 1; run=true;;
-		-i|--iso)	checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true;;
-		-d|--iso-only)	checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true; nodir=true;;
-		-q|--quiet)	quiet="-s";;
-		-v|--verbose)	unset quiet; [[ -z $verbose1 ]] && verbose1="-v" || verbose2="-V";;
-		-V|--version)	version; exit 0;;
-		-h|--help)	usage; exit 0;;
-		--)		shift; break;;
-		*) echo "Internal error!"; exit 1;;
+		-n|--name)		shift; name="$1";;
+		-p|--path)		shift; savepath="$1";;
+		-t|--tmp)		shift; tmpdir="$1";;
+		-r|--run)		checkdep "$darling" "Darling" 1; run=true;;
+		-i|--iso)		checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true;;
+		-d|--iso-only)		checkdep "$geniso" "cdrtools/cdrkit" 1; iso=true; noappdir=true;;
+		-q|--quiet)		quiet="-s";;
+		-v|--verbose)		unset quiet; [[ -z $verbose1 ]] && verbose1="-v" || verbose2="-V";;
+		-V|--version)		version; exit 0;;
+		-h|--help)		usage; exit 0;;
+		--overwrite-img)	overwriteimg=true;;
+		--overwrite-dir)	overwritedir=true;;
+		--overwrite-iso)	overwriteiso=true;;
+		--)			shift; break;;
+		*)			 echo "Internal error!"; exit 1;;
 	esac
 	shift
 done
@@ -276,7 +277,15 @@ checkdep "$udiskcmd" "udisks2" 1
 [[ -z "$name" ]] && name=$(basename "$filetoconvert" .dmg)
 [[ -z "$savepath" ]] && savepath=$(dirname "$filetoconvert")
 [[ -z "$verbose2" ]] && output="/dev/null" || output="/dev/stdout"
+appdir="$savepath/$name"
 vtree="$tmpdir/$name"
+
+if ! $noappdir && ! $overwritedir && [[ -e "$appdir" ]]; then
+	error "Directory $appdir already exists. Use --overwrite-dir to overwrite it." 1
+fi
+if $iso && ! $overwriteiso && [[ -e "$appdir.iso" ]]; then
+	error "File $appdir.iso already exists. Use --overwrite-iso to overwrite it." 1
+fi
 
 # Start
 if [[ ! -d "$tmpdir" ]] || [[ ! -d "$tmpdir/$name" ]] ; then
@@ -285,24 +294,24 @@ if [[ ! -d "$tmpdir" ]] || [[ ! -d "$tmpdir/$name" ]] ; then
 fi
 $iso && mkdir -p $verbose1 "$vtree"
 
-if [[ ! -f "$tmpdir/$name.img" ]] || $force; then
-	msg "Convert DMG file to IMG file..."
+msg "Convert DMG file to IMG file..."
+if [[ ! -f "$tmpdir/$name.img" ]] || $overwriteimg; then
 	convertdmg
 else
-	msgverbose1 "File %s exists. Use --force to override it." "$tmpdir/$name.img"
+	msgverbose1 "File %s already exists. Skipping conversion. Use --overwrite-img to overwrite it." "$tmpdir/$name.img"
 fi
 
 msg "Prepare loop device..."
 addloop
 
-if ! $nodir; then
-	msgverbose1 "Make application directory: %s" "$app_directory"
-	mkdir -p $verbose1 "$app_directory"
+if ! $noappdir; then
+	msgverbose1 "Make application directory: %s" "$appdir"
+	mkdir -p $verbose1 "$appdir"
 fi
 
 for part in ${loop}p*; do
 	mountpart $part
-	if ! $nodir; then
+	if ! $noappdir; then
 		copydir
 	fi
 done
@@ -319,7 +328,7 @@ done
 
 delloop
 
-if $run && ! $nodir; then
+if $run && ! $noappdir; then
 	msg "Try to run binary file with Darling..."
 	launcher
 fi
