@@ -162,9 +162,12 @@ addloop() {
 mountpart() {
 	local part=$1
 
-	msgverbose1 "Mount loop-device partition %s" "$part"
-	$udiskcmd mount --block-device $part > $output
 	mountpoint=$(findmnt --noheadings --output TARGET $part)
+	if [[ -z "$mountpoint" ]]; then
+		msgverbose1 "Mount loop-device partition %s" "$part"
+		$udiskcmd mount --block-device $part > $output
+		mountpoint=$(findmnt --noheadings --output TARGET $part)
+	fi
 	checkvar "$mountpoint" 30
 	msgverbose2 "$mountpoint"
 	critical=2
