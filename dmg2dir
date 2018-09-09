@@ -202,16 +202,19 @@ addloop() {
 
 mountpart() {
 	local part=$1
+	local mountpoint=$(findmnt --noheadings --output TARGET $part)
 
-	mountpoint=$(findmnt --noheadings --output TARGET $part)
 	if [[ -z "$mountpoint" ]]; then
 		msgverbose1 "Mounting loop device partition %s" "$part"
 		$udiskcmd mount --block-device $part > $output
 		mountpoint=$(findmnt --noheadings --output TARGET $part)
+	else
+		msgverbose1 "Skip mounting of loop device partition %s" "$part"
 	fi
 	checkvar "$mountpoint" 30
 	msgverbose2 "$mountpoint"
 	critical=2
+	mountpoints+=([$part]="$mountpoint")
 
 	if $iso; then
 		local label=$(basename "$mountpoint")
@@ -221,6 +224,9 @@ mountpart() {
 }
 
 copydir() {
+	local part=$1
+	local mountpoint=${mountpoints[$part]}
+
 	msgverbose1 "Copying files from %s to application directory" "$mountpoint"
 	cp -Rau $verbose1 "$mountpoint" "$appdir"
 	checkdir "$appdir" 40
@@ -306,6 +312,7 @@ checkdep "$udiskcmd" "udisks2" 1
 
 # Variables
 msg "Setting variables..."
+declare -A mountpoints
 [[ -z "$name" ]] && name=$(basename "$filetoconvert" .dmg)
 [[ -z "$savepath" ]] && savepath=$(dirname "$filetoconvert")
 [[ -z "$verbose2" ]] && output="/dev/null" || output="/dev/stdout"
@@ -344,7 +351,7 @@ if ! $noappdir; then
 	msg "Extracting files to %s..." "$appdir"
 	mkdir -p $verbose1 "$appdir"
 	for part in ${loop}p*; do
-		copydir
+		copydir $part
 	done
 fi
 

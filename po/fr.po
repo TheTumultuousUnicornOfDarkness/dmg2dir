@@ -90,6 +90,9 @@ msgstr "Récupération du nom du périphérique loop"
 msgid  "Mounting loop device partition %s"
 msgstr "Montage de la partition %s du périphérique loop"
 
+msgid  "Skip mounting of loop device partition %s"
+msgstr "Saute le montage de la partition %s du périphérique loop"
+
 msgid  "Creating virtual tree %s"
 msgstr "Création de l'arbre virtuel %s"
 
