@@ -7,6 +7,9 @@
 
 export TEXTDOMAINDIR=@TEXTDOMAINDIR@
 export TEXTDOMAIN=dmg2dir
+prgname="dmg2dir"
+issueurl="https://github.com/X0rg/dmg2dir/issues"
+siteurl="https://github.com/X0rg"
 udiskcmd=$(command -v udisksctl)
 geniso=$(command -v genisoimage)
 darling=$(command -v dyld)
@@ -16,7 +19,7 @@ fail=false
 
 name=			# -n
 savepath=		# -p
-tmpdir="/tmp/dmg2dir"	# -t
+tmpdir="/tmp/$prgname"	# -t
 run=false		# -r
 iso=false		# -i
 noappdir=false		# -d
@@ -74,8 +77,8 @@ msgerror() {
 		shift
 		shift
 
-		local errorstr=`printf "$(gettext -s "$str")\n" "$@"`
-		printf "\033[1;31m$(gettext -s 'Error %s: %s')\033[0m\n" "$error" "$errorstr"
+		printf "\033[1;31m$(gettext -s "$str")\033[0m" "$@"
+		printf "\033[1;31m$(gettext -s ' (error %i).')\033[0m\n" "$error"
 
 		# Clean
 		$iso && rm -rf $verbose1 "$vtree"
@@ -95,14 +98,14 @@ msgerror() {
 }
 
 usage() {
-	gettext -es "Usage: dmg2dir [OPTIONS] dmg_file.dmg"
+	gettext -es "Usage: %s [OPTIONS] dmg_file.dmg"
 	gettext -es "Options:"
-	gettext -es "\t-n, --name\t\tCustom name for application directory which will be created"
+	gettext -es "\t-n, --name\t\tCustom name for application directory"
 	gettext -es "\t-p, --path\t\tCustom path for application directory"
 	gettext -es "\t-t, --tmp\t\tCustom temporary directory"
-	gettext -es "\t-r, --run\t\tAttempt to run extracted application (use Darling)"
-	gettext -es "\t-i, --iso\t\tGenerate an ISO file from IMG file (use Genisoimage)"
-	gettext -es "\t-d, --iso-only\t\tSame as --iso, without application directory"
+	gettext -es "\t-r, --run\t\tAttempt to run extracted application (using Darling)"
+	gettext -es "\t-i, --iso\t\tGenerate an ISO file from IMG file (using Genisoimage)"
+	gettext -es "\t-d, --iso-only\t\tSame as --iso, without creating application directory"
 	gettext -es "\t-q, --quiet\t\tBe silent"
 	gettext -es "\t-v, --verbose\t\tBe verbose (-vv for very verbose)"
 	gettext -es "\t-V, --version\t\tDisplay script version and exit"
@@ -110,13 +113,13 @@ usage() {
 	gettext -es "\t    --overwrite-img\t\tOverwrite existing IMG file"
 	gettext -es "\t    --overwrite-dir\t\tOverwrite existing application directory"
 	gettext -es "\t    --overwrite-iso\t\tOverwrite existing ISO file"
-	gettext -es "\nPlease report problems at <https://github.com/X0rg/dmg2dir/issues>."
+	printf "$(gettext -s '\nPlease report issues here: %s.\n')" "$issueurl"
 }
 
 version() {
-	echo -e "DMG2DIR $version"
+	echo -e "$prgname $version"
 	echo -e "Copyleft 2018."
-	echo -e "\nWritten by Xorg (https://github.com/X0rg)."
+	echo -e "$siteurl"
 }
 
 
@@ -129,7 +132,7 @@ checkdep() {
 	local code="$3"
 
 	if [[ -z "$command" ]]; then
-		msgerror "$code" "Dependency %s is required." "$depname"
+		msgerror "$code" "Dependency %s is required" "$depname"
 	fi
 }
 
@@ -138,7 +141,7 @@ checkfile() {
 	local code="$2"
 
 	if [[ ! -f "$file" ]]; then
-		msgerror "$code" "File %s doesn't exist." "$file"
+		msgerror "$code" "File %s doesn't exist" "$file"
 	fi
 }
 
@@ -147,7 +150,7 @@ checkvar() {
 	local code="$2"
 
 	if [[ -z "$var" ]]; then
-		msgerror "$code" "Variable is empty."
+		msgerror "$code" "Variable is empty"
 	fi
 }
 
@@ -156,9 +159,9 @@ checkdir() {
 	local code="$2"
 
 	if [[ ! -d "$directory" ]]; then
-		msgerror "$code" "Directory %s doesn't exist." "$directory"
+		msgerror "$code" "Directory %s doesn't exist" "$directory"
 	elif [[ -z "$(ls -A $directory)" ]]; then
-		msgerror "$code" "Directory %s is empty." "$directory"
+		msgerror "$code" "Directory %s is empty" "$directory"
 	fi
 }
 
@@ -167,7 +170,7 @@ checkret() {
 	local code="$2"
 
 	if [[ $ret != 0 ]]; then
-		msgerror "$code" "Command fails."
+		msgerror "$code" "Command fails"
 	fi
 }
 
@@ -183,7 +186,7 @@ convertdmg() {
 }
 
 addloop() {
-	msgverbose1 "Setting up loop-device for file %s" "$tmpdir/$name.img"
+	msgverbose1 "Setting up loop device for file %s" "$tmpdir/$name.img"
 	loop=$($udiskcmd loop-setup --no-user-interaction --read-only --file "$tmpdir/$name.img")
 	checkvar "$loop" 20
 	msgverbose2 "$loop"
@@ -202,7 +205,7 @@ mountpart() {
 
 	mountpoint=$(findmnt --noheadings --output TARGET $part)
 	if [[ -z "$mountpoint" ]]; then
-		msgverbose1 "Mounting loop-device partition %s" "$part"
+		msgverbose1 "Mounting loop device partition %s" "$part"
 		$udiskcmd mount --block-device $part > $output
 		mountpoint=$(findmnt --noheadings --output TARGET $part)
 	fi
@@ -234,7 +237,7 @@ convertiso() {
 umountpart() {
 	local part=$1
 
-	msgverbose1 "Unmounting loop-device partition %s" "$part"
+	msgverbose1 "Unmounting loop device partition %s" "$part"
 	$udiskcmd unmount --no-user-interaction --force --block-device $part > $output
 	checkret "$?" 60
 	critical=1
@@ -242,7 +245,7 @@ umountpart() {
 
 delloop() {
 	if [[ -f $loop* ]]; then
-		msgverbose1 "Deleting loop-device %s" "$loop"
+		msgverbose1 "Deleting loop device %s" "$loop"
 		$udiskcmd loop-delete --no-user-interaction --block-device $loop > $output
 		checkret "$?" 70
 	fi
@@ -262,9 +265,9 @@ launcher() {
 #					MAIN							#
 #################################################################################################
 # Args
-OPTS=`getopt -o n:p:t:ridqvwVh --long name:,path:,tmp:,run,iso,iso-only,quiet,verbose,version,help,overwrite-img,overwrite-dir,overwrite-iso -n 'dmg2dir' -- "$@"`
+OPTS=`getopt -o n:p:t:ridqvwVh --long name:,path:,tmp:,run,iso,iso-only,quiet,verbose,version,help,overwrite-img,overwrite-dir,overwrite-iso -n $prgname -- "$@"`
 if [[ $? != 0 ]]; then
-	msgerror 1 "Failed parsing options."
+	msgerror 1 "Failed parsing options"
 fi
 
 eval set -- "$OPTS"
@@ -284,7 +287,7 @@ while true; do
 		--overwrite-dir)	overwritedir=true;;
 		--overwrite-iso)	overwriteiso=true;;
 		--)			shift; break;;
-		*)			echo "Internal error!"; exit 1;;
+		*)			gettext -es "Internal error"; exit 1;;
 	esac
 	shift
 done
@@ -297,7 +300,7 @@ if [[ -z "$filetoconvert" ]]; then
 	exit 1
 fi
 if [[ ! -f "$filetoconvert" ]]; then
-	msgerror 2 "File %s doesn't exist." "$filetoconvert"
+	msgerror 2 "File %s doesn't exist" "$filetoconvert"
 fi
 checkdep "$udiskcmd" "udisks2" 1
 
@@ -310,10 +313,10 @@ appdir="$savepath/$name"
 vtree="$tmpdir/$name"
 
 if ! $noappdir && ! $overwritedir && [[ -e "$appdir" ]]; then
-	msgerror 3 "Directory %s already exists. Use --overwrite-dir to overwrite it." "$appdir"
+	msgerror 3 "Directory %s already exists. Use --overwrite-dir to overwrite it" "$appdir"
 fi
 if $iso && ! $overwriteiso && [[ -e "$appdir.iso" ]]; then
-	msgerror 4 "File %s already exists. Use --overwrite-iso to overwrite it." "$appdir.iso"
+	msgerror 4 "File %s already exists. Use --overwrite-iso to overwrite it" "$appdir.iso"
 fi
 
 # Temporary directories
