@@ -1,64 +1,61 @@
 .\" Manpage for dmg2dir (French).
-.TH dmg2dir 1 "28 Février 2015" "DMG2DIR 3.0.2" "Manuel de DMG2DIR"
+.TH DMG2DIR 1 "Septembre 2018" "3.1.0" "Manuel de DMG2DIR"
 .SH NOM
-dmg2dir \- extraire les applications OS X depuis un fichier .dmg.
+dmg2dir \- extraire les applications macOS depuis un fichier DMG.
 .SH SYNOPSIS
 \fBdmg2dir\fR [\fIOPTIONS\fR] fichier_dmg.dmg
 .SH DESCRIPTION
-DMG2DIR est un script shell qui extrait les applications OS X depuis un fichier .dmg. Dans une utilisation basique, l'application sera extraite dans un répertoire, mais il est aussi possible de la convertir en un fichier ISO.
+DMG2DIR est un script shell qui extrait les applications macOS depuis un fichier DMG. Sans option, le fichier DMG sera extrait dans ub répertoire (appelé répertoire de l'application).
 .SH OPTIONS
 .B \-n, \-\-name
 .RS 4
-Nom personnalisé du répertoire de l'application qui sera créé.
-Définit le nom utilisé pour le répertoire. Si ce paramètre n'est pas spécifié, la valeur par défaut est la même que le nom du fichier .dmg.
+Nom personnalisé du répertoire de l'application.
+Définit le nom répertoire de l'application. Si ce paramètre n'est pas spécifié, la valeur par défaut est le nom du fichier DMG.
 .RE
 .PP
 .B \-p, \-\-path
 .RS 4
 Chemin personnalisé pour le répertoire de l'application.
-Change où sauvegarder les fichiers. Si ce paramètre n'est pas spécifié, la valeur par défaut est celle de l'emplacement du fichier .dmg.
+Définit où sauvegarder les fichiers. Si ce paramètre n'est pas spécifié, la valeur par défaut est le même répertoire que le fichier DMG.
 .RE
 .PP
 .B \-t, \-\-tmp
 .RS 4
 Répertoire temporaire personnalisé.
-Change où sauvegarder les fichies temporaires (comme les fichiers .img). La valeur par défaut est \fI/tmp/dmg2dir\fR.
+Définit où sauvegarder les fichies temporaires. La valeur par défaut est \fI/tmp/dmg2dir\fR.
+\fBAttention :\fR les fichiers volumineux peuvent saturer la mémoire si \fI/tmp\fR est monté en tant que \fBtmpfs\fR.
 .RE
 .PP
 .B \-r, \-\-run
 .RS 4
 Tente d'exécuter l'application extraite.
-Si \fBDarling\fR est installé sur le système, essayer d'exécuter l'application OS X sur le système GNU/Linux courant.
+Si \fBDarling\fR est installé, essaye d'exécuter l'application extraite.
+\fBNote :\fR Ne peut pas être utilisé avec \fB--iso-only\fR.
 .RE
 .PP
 .B \-i, \-\-iso
 .RS 4
 Génère un fichier ISO à partir du fichier IMG.
-Si \fBGenisoimage\fR est installé sur le système, convertit le fichier .dmg en un fichier .iso en plus du répertoire de l'application.
+Si \fBGenisoimage\fR est installé, convertit le fichier DMG en un fichier ISO en plus du répertoire de l'application.
 .RE
 .PP
 .B \-d, \-\-iso-only
 .RS 4
-Comme \fI--iso\fR, sans le répertoire de l'application.
-Si \fBGenisoimage\fR est installé sur le système, convertit le fichier .dmg en un fichier .iso sans créer le répertoire de l'application.
+Comme \fB--iso\fR, sans créer le répertoire de l'application.
+Si \fBGenisoimage\fR est installé, convertit le fichier DMG en un fichier ISO. Le répertoire de l'application ne sera pas créé.
 .RE
 .PP
 .B \-q, \-\-quiet
 .RS 4
 S'exécute silencieusement.
-Affiche aucune sortie.
+S'exécute sans rien afficher.
 .RE
 .PP
 .B \-v, \-\-verbose
 .RS 4
 S'exécute verbeusement.
 Affiche plus de sortie durant le traitement.
-.RE
-.PP
-.B \-w, \-\-\+verbose
-.RS 4
-S'exécute plus verbeusement.
-Affiche beaucoup de sortie durant le traitement. Utile pour déboguer ou bien comprendre comment fonctionne le script.
+Utilisez \fB-vv\fR pour augmenter la verbosité.
 .RE
 .PP
 .B \-V, \-\-version
@@ -70,7 +67,39 @@ Affiche la version du script et quitte.
 .RS 4
 Affiche l'aide et quitte.
 .RE
+.PP
+.B \-\-overwrite-img
+.RS 4
+Écrase le fichier IMG existant.
+Remplace le fichier IMG s'il existe déjà, autrement saute l'extraction.
+.RE
+.PP
+.B \-\-overwrite-dir
+.RS 4
+Écrase le répertoire de l'application existant.
+Remplace le répertoire de l'application s'il existe déjà.
+Utilisez \fB--name\fR ou \fB--path\fR si vous voulez extraire le fichier DMG sans écraser le répertoire de l'application.
+.RE
+.PP
+.B \-\-overwrite-iso
+.RS 4
+Écrase le fichier ISO existant.
+Remplace le fichier ISO s'il existe déjà.
+Utilisez \fB--name\fR ou \fB--path\fR si vous voulez extraire le fichier DMG sans écraser le fichier ISO.
+.RE
+.SH CODE DE RETOUR
+.B 0
+Programme exécuté sans erreur.
+.RE
+.PP
+.B !0
+Programme exécuté avec erreur.
+.SH ENVIRONNEMENT
+.B DEBUG
+.RS 4
+Si $\fBDEBUG\fR est définie, affiche toutes les commandes exécutées.
+.RE
 .SH BOGUES
 Merci de raporter les bogues en ouvrant un nouveau problème ("\fBNew issue\fR") ici : \fIhttps://github.com/X0rg/dmg2dir/issues\fR.
 .SH AUTEUR
-Xorg <https://github.com/X0rg/dmg2dir>
+Xorg (https://github.com/X0rg/dmg2dir)

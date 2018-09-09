@@ -23,7 +23,7 @@ msgid  "\t-r, --run\t\tAttempt to run extracted application (using Darling)"
 msgstr "\t-r, --run\t\tTente d'exécuter l'application extraite (en utilisant Darling)"
 
 msgid  "\t-i, --iso\t\tGenerate an ISO file from IMG file (using Genisoimage)"
-msgstr "\t-i, --iso\t\tGénère un fichier ISO à partir du fichier IMG (n utilisant Genisoimage)"
+msgstr "\t-i, --iso\t\tGénère un fichier ISO à partir du fichier IMG (en utilisant Genisoimage)"
 
 msgid  "\t-d, --iso-only\t\tSame as --iso, without creating application directory"
 msgstr "\t-d, --iso-only\t\tComme --iso, sans créer le répertoire de l'application"

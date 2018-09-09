@@ -1,64 +1,61 @@
 .\" Manpage for dmg2dir (English).
-.TH dmg2dir 1 "28 February 2015" "DMG2DIR 3.0.2" "DMG2DIR Manual"
+.TH DMG2DIR 1 "September 2018" "3.1.0" "DMG2DIR manual"
 .SH NAME
-dmg2dir \- extract OS X application from .dmg file.
+dmg2dir \- extract macOS applications from DMG file.
 .SH SYNOPSIS
 \fBdmg2dir\fR [\fIOPTIONS\fR] dmg_file.dmg
 .SH DESCRIPTION
-DMG2DIR is a shell script which extract OS X application from .dmg file. In a basic usage, the application will be extracted in a directory, but it is also possible to convert it in ISO file.
+DMG2DIR is a shell script which extract macOS application from a DMG file. Without any option, DMG file will be extracted in a directory (called application directory).
 .SH OPTIONS
 .B \-n, \-\-name
 .RS 4
-Custom name for application directory which will be created.
-Set the name used for directory. If not specified, default value is the name of .dmg file.
+Custom name for application directory.
+Set application directory name. If not specified, default value is the name of DMG file.
 .RE
 .PP
 .B \-p, \-\-path
 .RS 4
 Custom path for application directory.
-Change where to save files. If not specified, default value is the same directory where .dmg file is located.
+Set where to save files. If not specified, default value is the same directory as DMG file.
 .RE
 .PP
 .B \-t, \-\-tmp
 .RS 4
 Custom temporary directory.
-Change where to save temporary files (like .img files). Default value is \fI/tmp/dmg2dir\fR.
+Set where to save temporary files. Default value is \fI/tmp/dmg2dir\fR.
+\fBWarning:\fR large files can saturate memory if \fI/tmp\fR is mounted as \fBtmpfs\fR.
 .RE
 .PP
 .B \-r, \-\-run
 .RS 4
 Attempt to run extracted application.
-If \fBDarling\fR is installed on the system, try to run the OS X application on your GNU/Linux system.
+If \fBDarling\fR is installed, try to run the extracted application.
+\fBNote:\fR Cannot be used with \fB--iso-only\fR.
 .RE
 .PP
 .B \-i, \-\-iso
 .RS 4
 Generate an ISO file from IMG file.
-If \fBGenisoimage\fR is installed on the system, convert .dmg file on a .iso file besides the application directory.
+If \fBGenisoimage\fR is installed, convert DMG file to an ISO file besides the application directory.
 .RE
 .PP
 .B \-d, \-\-iso-only
 .RS 4
-Same as \fI--iso\fR, without application directory.
-If \fBGenisoimage\fR is installed on the system, convert .dmg file on a .iso file without making the application directory.
+Same as \fB--iso\fR, without creating application directory.
+If \fBGenisoimage\fR is installed, convert DMG file to an ISO file. No application directory will be created.
 .RE
 .PP
 .B \-q, \-\-quiet
 .RS 4
-Run silently.
-Don't print anything output.
+Be silent.
+Run without printing anything.
 .RE
 .PP
 .B \-v, \-\-verbose
 .RS 4
-Run verbosely.
+Be verbose.
 Print more output during processing.
-.RE
-.PP
-.B \-w, \-\-\+verbose
-.RS 4
-Run more verbosely.
-Print a lot of output during processing. Useful to debug or understand how works the script.
+Use \fB-vv\fR to increase verbosity.
 .RE
 .PP
 .B \-V, \-\-version
@@ -70,7 +67,39 @@ Display script version and exit.
 .RS 4
 Display help and exit.
 .RE
+.PP
+.B \-\-overwrite-img
+.RS 4
+Overwrite existing IMG file.
+Replace IMG file if it already exists, otherwise skip extraction.
+.RE
+.PP
+.B \-\-overwrite-dir
+.RS 4
+Overwrite existing application directory.
+Replace application directory if it already exists.
+Use \fB--name\fR or \fB--path\fR if you want to extract DMG file without overwriting application directory.
+.RE
+.PP
+.B \-\-overwrite-iso
+.RS 4
+Overwrite existing ISO file.
+Replace ISO file if it already exists.
+Use \fB--name\fR or \fB--path\fR if you want to extract DMG file without overwriting ISO file.
+.RE
+.SH EXIT STATUS
+.B 0
+Successful program execution.
+.RE
+.PP
+.B !0
+Failed program execution.
+.SH ENVIRONMENT
+.B DEBUG
+.RS 4
+If $\fBDEBUG\fR is set, print every command executed.
+.RE
 .SH BUGS
 Please report bugs by opening a new issue here: \fIhttps://github.com/X0rg/dmg2dir/issues\fR.
 .SH AUTHOR
-Xorg <https://github.com/X0rg/dmg2dir>
+Xorg (https://github.com/X0rg/dmg2dir)
