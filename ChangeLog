@@ -1,3 +1,16 @@
+Version 3.1.0 - 2018-09-10 :
+
+	* Fix creation of ISO > 4GB
+	* Fix some errors with udisks2 (mount/unmount/loop-delete)
+	* Fix DEBUG environment variable
+	* Remove --force option
+	* Replace -w option by -vv
+	* Improve options parsing with getopt
+	* Improve dependencies checking
+	* Add support for loop devices with more than one partition
+	* Add --overwrite-img/--overwrite-dir/--overwrite-iso options
+	
+
 Version 3.0.3 - 2018-03-29 :
 
 	* Fix bug with tmpdir

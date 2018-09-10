@@ -13,7 +13,7 @@ siteurl="https://github.com/X0rg"
 udiskcmd=$(command -v udisksctl)
 geniso=$(command -v genisoimage)
 darling=$(command -v dyld)
-version="3.0.3"
+version="3.1.0"
 critical=0
 fail=false
 
