@@ -1,57 +1,53 @@
 # DMG2DIR
 
-DMG2DIR is a shell script, designed for GNU/Linux (and maybe compatible POSIX), which **extract OS X application** from .dmg file.
-With this script, you can extract a .dmg file, alsa know as OS X Disk Image, under GNU/Linux. DMG files are HFS+ disk image.
+DMG2DIR is a Bash script which can **extract a macOS application** from a DMG file. DMG files are HFS+ disk image.
 
-DMG2DIR converts DMG file as an IMG file (depends of **dmg2img**), then IMG file is mounted (requires **udisks2**) and files, from mounted IMG file, are copied to a directory (called *application directory*).
-
-It can also make an ISO file from mounted IMG file, or else it is possible to try to run application found in application directory by using **Darling**.
-
+The DMG file can be extracted to a directory or converted to an ISO file.
 
 ## Dependencies
 
-* *hfsplus* module
-    * Allow to mount .img file (an HFS+ disk)
-    * `modinfo hfsplus`
+- _hfsplus_ module
 
-* dmg2img
-   * Convert .dmg file in .img file
-   * http://vu1tur.eu.org/tools/
+  - Allow to mount IMG file (an HFS+ disk image)
+  - `modinfo hfsplus`
 
-* udisks2
-   * Mount .img file
-   * http://www.freedesktop.org/wiki/Software/udisks/
+- dmg2img
 
-* Darling (optionnal)
-   * Run the OS X application
-   * http://www.darlinghq.org
+  - Convert DMG file to IMG file
+  - http://vu1tur.eu.org/tools/
 
-* cdrtools/cdrkit (optionnal)
-   * Make an ISO file (provides command genisoimage)
-   * http://cdrecord.org
+- udisks2
 
+  - Mount IMG file
+  - http://www.freedesktop.org/wiki/Software/udisks/
+
+- cdrtools/cdrkit (optionnal)
+  - Make an ISO file (provides command genisoimage)
+  - http://cdrecord.org
+- Darling (optionnal)
+  - Run the macOS application
+  - http://www.darlinghq.org
 
 ## Installation
 
-To install DMG2DIR in your system, simply run as root:
+To install DMG2DIR on your system:
+
 ```
-make install
-```
-You can change default PREFIX by using:
-```
-make PREFIX=/absolute_path install
+# make install
 ```
 
+You can change default PREFIX by using:
+
+```
+# make PREFIX=/absolute_path install
+```
 
 ## Usage
 
-First, you need to be in group **disk** to be able to mount IMG file.  
-Then, from a shell, use command:
+From a shell, type following command:
+
 ```
-dmg2dir
+$ dmg2dir [OPTIONS] dmg_file.dmg
 ```
-```
-Usage: dmg2dir [OPTIONS] dmg_file.dmg
-```
-Don't forget to use argument `--help` to see all options available...  
-...Or read the man-page: `man dmg2dir`.
+
+Use argument `--help` to see all options, or read the man-page with `man dmg2dir`.
