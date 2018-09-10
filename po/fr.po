@@ -127,9 +127,6 @@ msgstr "Erreur interne"
 msgid  "Checking prerequisites..."
 msgstr "Vérification des pré-requis..."
 
-msgid  "File %s doesn't exist"
-msgstr "Le fichier %s n'existe pas"
-
 msgid  "Setting variables..."
 msgstr "Prépare des variables..."
 
