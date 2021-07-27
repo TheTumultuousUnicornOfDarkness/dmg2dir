@@ -6,24 +6,26 @@ The DMG file can be extracted to a directory or converted to an ISO file.
 
 ## Dependencies
 
-- _hfsplus_ module
+- gettext
+  - translate strings
+  - https://www.gnu.org/software/gettext
 
+- _hfsplus_ module
   - Allow to mount IMG file (an HFS+ disk image)
   - `modinfo hfsplus`
 
 - dmg2img
-
   - Convert DMG file to IMG file
   - http://vu1tur.eu.org/tools/
 
 - udisks2
-
   - Mount IMG file
   - http://www.freedesktop.org/wiki/Software/udisks/
 
 - cdrtools/cdrkit (optionnal)
   - Make an ISO file (provides command genisoimage)
   - http://cdrecord.org
+
 - Darling (optionnal)
   - Run the macOS application
   - http://www.darlinghq.org
